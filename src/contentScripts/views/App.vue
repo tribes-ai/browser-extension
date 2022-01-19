@@ -1,5 +1,7 @@
 <template>
-  <div class="fixed right-0 bottom-0 m-5 z-100 flex font-sans select-none leading-1em">
+  <div
+    class="fixed right-0 bottom-0 m-5 z-100 flex font-sans select-none leading-1em"
+  >
     <div
       class="bg-white text-gray-800 rounded-full shadow w-max h-min"
       p="x-4 y-2"
