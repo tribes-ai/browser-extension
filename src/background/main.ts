@@ -1,5 +1,55 @@
 import { sendMessage, onMessage } from 'webext-bridge'
 import { Tabs } from 'webextension-polyfill'
+import { startTrackingActivity } from './tracking'
+
+interface Session {
+  url: string
+  tabId: string
+  startTime: number
+  endTime: number
+}
+
+// let startTime = 0
+const trackingData: any = {}
+let sessionStartTime = 0
+
+function accumulateTime(session: Session) {
+  if (session.url) {
+    const url = session.url ? new URL(session.url).hostname : session.url
+    if (trackingData[url])
+      trackingData[url] += (session.endTime - session.startTime) / 1000
+    else trackingData[url] = (session.endTime - session.startTime) / 1000
+  }
+  console.log(trackingData)
+  return trackingData
+}
+
+function onSessionEnd(session: Session) {
+  accumulateTime(session)
+}
+
+function onExtensionOpenListener(url: string) {
+  accumulateTime({
+    url,
+    tabId: '',
+    startTime: sessionStartTime,
+    endTime: Date.now(),
+  })
+}
+
+function onSessionStart(session: Session) {
+  sessionStartTime = session.startTime
+}
+
+function updateUI() {
+  browser.runtime.sendMessage({ msg: 'popup', data: trackingData })
+}
+
+startTrackingActivity(onSessionStart, onSessionEnd)
+onMessage('updateUI', (data: any) => {
+  onExtensionOpenListener(data.data.url)
+  updateUI()
+})
 
 // only on dev mode
 if (import.meta.hot) {
@@ -33,7 +83,7 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
   }
 
   // eslint-disable-next-line no-console
-  console.log('previous tab', tab)
+  // console.log('previous tab', tab)
   sendMessage(
     'tab-prev',
     { title: tab.title },

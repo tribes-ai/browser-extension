@@ -12,9 +12,9 @@
     "resolveJsonModule": true,
     "noUnusedLocals": true,
     "forceConsistentCasingInFileNames": true,
-    "types": [
-      "vite/client"
-    ],
+    "allowJs": true,
+    "checkJs": false,
+    "types": ["vite/client"],
     "paths": {
       "~/*": ["src/*"]
     }

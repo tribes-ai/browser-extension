@@ -1,19 +1,23 @@
 <template>
-  <main class="w-[300px] px-4 py-5 text-center text-gray-700">
-    <Logo />
-    <div>Popup</div>
-    <p class="mt-2 opacity-50">This is the popup page</p>
-    <button class="btn mt-2" @click="openOptionsPage">Open Options</button>
-    <div class="mt-2">
-      <span class="opacity-50">Storage:</span> {{ storageDemo }}
-    </div>
+  <main class="px-4 py-5 text-center text-gray-700">
+    <ul>
+      <li v-for="(i, index) in trackingData" :key="index">
+        {{ i }}
+      </li>
+    </ul>
   </main>
 </template>
 
 <script setup lang="ts">
-import { storageDemo } from '~/logic/storage'
+import { ref } from 'vue'
+import { sendMessage } from 'webext-bridge'
+let trackingData = ref({ message: '', data: {} })
+browser.runtime.onMessage.addListener((message: any) => {
+  trackingData.value = message
+  return true
+})
 
-function openOptionsPage() {
-  browser.runtime.openOptionsPage()
-}
+browser.tabs.query({ active: true, currentWindow: true }).then((tab: any) => {
+  sendMessage('updateUI', { url: tab[0].url }, 'background')
+})
 </script>
