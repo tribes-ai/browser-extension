@@ -1,7 +1,5 @@
-import { sendMessage, onMessage } from 'webext-bridge'
-import { Tabs } from 'webextension-polyfill'
+import { onMessage } from 'webext-bridge'
 import { startTrackingActivity } from './tracking'
-
 interface Session {
   url: string
   tabId: string
@@ -10,8 +8,9 @@ interface Session {
 }
 
 // let startTime = 0
-const trackingData: any = {}
-let sessionStartTime = 0
+let trackingData: any = {}
+
+const stopTracking = startTrackingActivity(onSessionStart, onSessionEnd)
 
 function accumulateTime(session: Session) {
   if (session.url) {
@@ -28,26 +27,15 @@ function onSessionEnd(session: Session) {
   accumulateTime(session)
 }
 
-function onExtensionOpenListener(url: string) {
-  accumulateTime({
-    url,
-    tabId: '',
-    startTime: sessionStartTime,
-    endTime: Date.now(),
-  })
-}
-
 function onSessionStart(session: Session) {
-  sessionStartTime = session.startTime
+  accumulateTime(session)
 }
 
 function updateUI() {
   browser.runtime.sendMessage({ msg: 'popup', data: trackingData })
 }
 
-startTrackingActivity(onSessionStart, onSessionEnd)
 onMessage('updateUI', (data: any) => {
-  onExtensionOpenListener(data.data.url)
   updateUI()
 })
 
@@ -63,43 +51,7 @@ browser.runtime.onInstalled.addListener((): void => {
   console.log('Extension installed')
 })
 
-let previousTabId = 0
-
-// communication example: send previous tab title from background page
-// see shim.d.ts for type declaration
-browser.tabs.onActivated.addListener(async ({ tabId }) => {
-  if (!previousTabId) {
-    previousTabId = tabId
-    return
-  }
-
-  let tab: Tabs.Tab
-
-  try {
-    tab = await browser.tabs.get(previousTabId)
-    previousTabId = tabId
-  } catch {
-    return
-  }
-
-  // eslint-disable-next-line no-console
-  // console.log('previous tab', tab)
-  sendMessage(
-    'tab-prev',
-    { title: tab.title },
-    { context: 'content-script', tabId }
-  )
-})
-
-onMessage('get-current-tab', async () => {
-  try {
-    const tab = await browser.tabs.get(previousTabId)
-    return {
-      title: tab?.title,
-    }
-  } catch {
-    return {
-      title: undefined,
-    }
-  }
+browser.windows.onRemoved.addListener(() => {
+  stopTracking()
+  trackingData = {}
 })

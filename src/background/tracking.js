@@ -1,5 +1,5 @@
 export function startTrackingActivity(onSessionStart, onSessionEnd) {
-  var session = { tabId: -1 }
+  let session = { tabId: -1 }
 
   function endSession() {
     if (session.tabId !== -1) {
@@ -27,7 +27,7 @@ export function startTrackingActivity(onSessionStart, onSessionEnd) {
   function trackWindowFocus(windowId) {
     if (windowId !== -1) {
       browser.windows.getCurrent({ populate: true }).then(function (window) {
-        var activeTab = window.tabs.filter(function (tab) {
+        let activeTab = window.tabs.filter(function (tab) {
           return tab.active
         })[0]
         if (activeTab && activeTab.id !== session.tabId) {
@@ -60,9 +60,10 @@ export function startTrackingActivity(onSessionStart, onSessionEnd) {
       })
     }
   }
+
   function trackHighlightedTab({ tabIds }) {
     browser.tabs.get(tabIds[0]).then((tab) => {
-      if (tab.id === session.id) {
+      if (tab.id === session.tabId) {
         startSession(tab)
       }
     })
@@ -77,5 +78,7 @@ export function startTrackingActivity(onSessionStart, onSessionEnd) {
     browser.windows.onFocusChanged.removeListener(trackWindowFocus)
     browser.tabs.onUpdated.removeListener(trackTabUpdates)
     browser.tabs.onActivated.removeListener(trackActiveTab)
+    browser.tabs.onHighlighted.removeListener(trackHighlightedTab)
+    session = {}
   }
 }
