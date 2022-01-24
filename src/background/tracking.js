@@ -61,24 +61,14 @@ export function startTrackingActivity(onSessionStart, onSessionEnd) {
     }
   }
 
-  function trackHighlightedTab({ tabIds }) {
-    browser.tabs.get(tabIds[0]).then((tab) => {
-      if (tab.id === session.tabId) {
-        startSession(tab)
-      }
-    })
-  }
-
   browser.windows.onFocusChanged.addListener(trackWindowFocus)
   browser.tabs.onUpdated.addListener(trackTabUpdates)
   browser.tabs.onActivated.addListener(trackActiveTab)
-  browser.tabs.onHighlighted.addListener(trackHighlightedTab)
 
   return function stopTracking() {
     browser.windows.onFocusChanged.removeListener(trackWindowFocus)
     browser.tabs.onUpdated.removeListener(trackTabUpdates)
     browser.tabs.onActivated.removeListener(trackActiveTab)
-    browser.tabs.onHighlighted.removeListener(trackHighlightedTab)
     session = {}
   }
 }

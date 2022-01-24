@@ -41,6 +41,7 @@ export const sharedConfig: UserConfig = {
         // auto import icons
         IconsResolver({
           componentPrefix: '',
+          enabledCollections: ['ep'],
         }),
       ],
     }),
