@@ -1,8 +1,6 @@
 import { dirname, relative } from 'path'
 import { defineConfig, UserConfig } from 'vite'
 import Vue from '@vitejs/plugin-vue'
-import Icons from 'unplugin-icons/vite'
-import IconsResolver from 'unplugin-icons/resolver'
 import Components from 'unplugin-vue-components/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import WindiCSS from 'vite-plugin-windicss'
@@ -39,15 +37,8 @@ export const sharedConfig: UserConfig = {
       dts: true,
       resolvers: [
         // auto import icons
-        IconsResolver({
-          componentPrefix: '',
-          enabledCollections: ['ep'],
-        }),
       ],
     }),
-
-    // https://github.com/antfu/unplugin-icons
-    Icons(),
 
     // rewrite assets to use relative path
     {

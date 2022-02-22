@@ -1,8 +1,32 @@
+@font-face {
+  font-family: 'Rubik';
+  src: url('../assets/fonts/Rubik/static/Rubik-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Rubik';
+  src: url('../assets/fonts/Rubik/static/Rubik-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
 html,
 body,
 #app {
   margin: 0;
   padding: 0;
+}
+
+html {
+  /* 62.5% of 16px base font size is 10px */
+  font-size: 62.5%;
+}
+
+body {
+  font-family: 'Rubik';
+  font-size: 1.4rem; /* 14px */
 }
 
 .btn {

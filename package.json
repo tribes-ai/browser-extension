@@ -20,11 +20,12 @@
     "start:chromium": "web-ext run --source-dir ./extension --target=chromium",
     "start:firefox": "web-ext run --source-dir ./extension --target=firefox-desktop",
     "clear": "rimraf extension/dist extension/manifest.json extension.*",
-    "lint": "eslint 'src/**/*.{json,ts,js,vue}'"
+    "lint": "eslint 'src/**/*.{json,ts,js,vue}'",
+    "analysis": "windicss-analysis"
   },
   "devDependencies": {
     "@ffflorian/jszip-cli": "^3.1.5",
-    "@iconify/json": "^1.1.408",
+    "@heroicons/vue": "^1.0.5",
     "@types/fs-extra": "^9.0.13",
     "@types/node": "^16.10.2",
     "@types/webextension-polyfill": "^0.8.2",
@@ -47,14 +48,15 @@
     "rimraf": "^3.0.2",
     "typescript": "^4.4.3",
     "unplugin-auto-import": "^0.4.8",
-    "unplugin-icons": "^0.11.4",
     "unplugin-vue-components": "^0.15.4",
     "vite": "^2.6.2",
-    "vite-plugin-windicss": "^1.4.8",
+    "vite-plugin-windicss": "^1.7.1",
     "vue": "^3.2.19",
     "vue-demi": "^0.11.4",
     "web-ext": "^6.4.0",
     "webext-bridge": "^5.0.0",
-    "webextension-polyfill": "^0.8.0"
+    "webextension-polyfill": "^0.8.0",
+    "windicss": "^3.4.4",
+    "windicss-analysis": "^0.3.5"
   }
 }
