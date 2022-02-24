@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white w-[25rem] py-4 px-8 space-y-8 text-accent">
+  <div class="bg-white w-[40rem] p-8 space-y-8 text-accent">
     <img
       src="https://cdn.dev.tribes.ai/public/dashboard/images/logo/logo-tribes-ai.png"
       class="max-w-[40%] object-contain"
@@ -31,13 +31,27 @@
     <table class="w-full border-collapse border border-primary">
       <thead>
         <tr class="text-left">
-          <th>Sub-Domain</th>
+          <th>Domain</th>
           <th>Tracked</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>app.tribes.ai</td>
+          <td>
+            <input
+              v-model="addDomain"
+              class="w-full focus-within:outline-none"
+              type="text"
+              placeholder="Add missing domain here"
+              @keypress.enter="addToDomainsList"
+            />
+          </td>
+          <td>
+            <input type="checkbox" class="accent-primary" />
+          </td>
+        </tr>
+        <tr v-for="(domain, index) in trackedDomains" :key="index">
+          <td>{{ domain }}</td>
           <td>
             <input type="checkbox" class="accent-primary" />
           </td>
@@ -48,9 +62,8 @@
 </template>
 
 <script setup lang="ts">
-// import { ref, toRaw } from 'vue'
-// import { sendMessage } from 'webext-bridge'
-// import LocalStorage from '~/utils/LocalStorage'
+import { ref, toRaw } from 'vue'
+import { getHostname } from 'tldts'
 import {
   SupportIcon,
   InformationCircleIcon,
@@ -58,30 +71,34 @@ import {
   LoginIcon,
   ExternalLinkIcon,
 } from '@heroicons/vue/outline'
+import LocalStorage from '~/utils/LocalStorage'
 
-// const addDomain = ref('')
-// const invalidDomain = ref(false)
+const addDomain = ref('')
+const invalidDomain = ref(false)
 // const whitelistedDomains = ref<Array<string>>([])
-// const trackingData = ref({ message: '', data: {} })
-// const storage = new LocalStorage()
+const trackedDomains = ref<string[]>([])
+const storage = new LocalStorage()
 
-// async function fetchWhitelistedDomains() {
-//   let data = await storage.getItem('whitelistedDomains')
-//   whitelistedDomains.value = data['whitelistedDomains']
-// }
+async function fetchWhitelistedDomains() {
+  let data = await storage.getItem('trackedDomains')
+  trackedDomains.value = data['trackedDomains']
+}
 
-// async function addToWhitelistedDomains() {
-//   invalidDomain.value = false
-//   try {
-//     new URL(addDomain.value)
-//     whitelistedDomains.value.push(addDomain.value)
-//     addDomain.value = ''
-//     await storage.setItem('whitelistedDomains', toRaw(whitelistedDomains.value))
-//   } catch (e) {
-//     console.error(e)
-//     invalidDomain.value = true
-//   }
-// }
+async function addToDomainsList() {
+  console.log('called')
+  invalidDomain.value = false
+  try {
+    const url = getHostname(addDomain.value)
+    if (url) {
+      trackedDomains.value.unshift(url)
+      addDomain.value = ''
+      await storage.setItem('trackedDomains', toRaw(trackedDomains.value))
+    }
+  } catch (e) {
+    console.error(e)
+    invalidDomain.value = true
+  }
+}
 
 // async function removeDomain(domain: string) {
 //   let arr = whitelistedDomains.value.filter((v) => v !== domain)
@@ -89,16 +106,19 @@ import {
 //   whitelistedDomains.value = arr
 // }
 
-// fetchWhitelistedDomains()
+fetchWhitelistedDomains()
 
-// browser.runtime.onMessage.addListener((message: any) => {
-//   trackingData.value = message
-//   return true
-// })
+// browser.runtime.sendMessage({ message: 'popup' })
 
-// browser.tabs.query({ active: true, currentWindow: true }).then((tab: any) => {
-//   sendMessage('updateUI', { url: tab[0].url }, 'background')
-// })
+// browser.runtime.onMessage.addListener(
+//   ({ message, data }: { message: string; data: any }) => {
+//     if (message === 'popup') {
+//       trackedDomains.value = data
+//       console.log(trackedDomains.value)
+//     }
+//     return true
+//   }
+// )
 </script>
 
 <style scoped>

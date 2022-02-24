@@ -23,6 +23,7 @@ specifiers:
   npm-run-all: ^4.1.5
   prettier: ^2.5.1
   rimraf: ^3.0.2
+  tldts: ^5.7.66
   typescript: ^4.4.3
   unplugin-auto-import: ^0.4.8
   unplugin-vue-components: ^0.15.4
@@ -59,6 +60,7 @@ devDependencies:
   npm-run-all: 4.1.5
   prettier: 2.5.1
   rimraf: 3.0.2
+  tldts: 5.7.66
   typescript: 4.5.5
   unplugin-auto-import: 0.4.20_@vueuse+core@7.6.2+vite@2.8.4
   unplugin-vue-components: 0.15.6_vite@2.8.4+vue@3.2.31
@@ -4604,6 +4606,17 @@ packages:
 
   /tiny-uid/1.1.1:
     resolution: {integrity: sha512-YRtEXpxokCLMMR46Ml/gen6jDFjZpyo9BMlEGmEpElA+zbCKtoTTikvvDTKR4Gro6tNij3ZA+60i9UiCYKKVyw==}
+    dev: true
+
+  /tldts-core/5.7.66:
+    resolution: {integrity: sha512-cQ93191xT6h7+134p/VgfB9D512X42Ew1VEmGay1zkJG7tRyO6zp8MObpeg+6pBMkMmeclYG6goR5gKUoWfw3Q==}
+    dev: true
+
+  /tldts/5.7.66:
+    resolution: {integrity: sha512-1vvJBmj5QoWW2JnzNXt/+ZxB0+GNvWWfLd9/LEjyb2PwJAq70V/LlqCLM+Ab8M0PGQL2+pQIc4gsQEvmJI5eCg==}
+    hasBin: true
+    dependencies:
+      tldts-core: 5.7.66
     dev: true
 
   /tmp/0.2.1:
