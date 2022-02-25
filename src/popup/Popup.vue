@@ -2,9 +2,9 @@
   <div class="bg-white w-[40rem] p-8 space-y-8 text-accent">
     <img
       src="https://cdn.dev.tribes.ai/public/dashboard/images/logo/logo-tribes-ai.png"
-      class="max-w-[40%] object-contain"
+      class="max-w-[40%] object-contain -ml-[1.25rem]"
     />
-    <ul class="space-y-4">
+    <ul class="space-y-4 flex flex-col justify-start">
       <li>
         <InformationCircleIcon class="w-8 h-8 text-primary" />
         <a> About</a>
@@ -35,7 +35,7 @@
           <th>Tracked</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="max-h-[10rem] overflow-y-auto">
         <tr>
           <td>
             <input
@@ -46,14 +46,20 @@
               @keypress.enter="addToDomainsList"
             />
           </td>
-          <td>
-            <input type="checkbox" class="accent-primary" />
+          <td class="pl-1">
+            <input type="checkbox" class="accent-primary" checked />
           </td>
         </tr>
-        <tr v-for="(domain, index) in trackedDomains" :key="index">
-          <td>{{ domain }}</td>
+        <tr v-for="(domain, key) in trackedDomains" :key="domain">
+          <td>{{ key }}</td>
           <td>
-            <input type="checkbox" class="accent-primary" />
+            <input
+              type="checkbox"
+              class="accent-primary"
+              :value="domain"
+              :checked="isDomainStored(domain)"
+              @change="toggleDomainToStorage"
+            />
           </td>
         </tr>
       </tbody>
@@ -71,28 +77,29 @@ import {
   LoginIcon,
   ExternalLinkIcon,
 } from '@heroicons/vue/outline'
+import { DomainList } from '~/types'
 import LocalStorage from '~/utils/LocalStorage'
 
 const addDomain = ref('')
 const invalidDomain = ref(false)
-// const whitelistedDomains = ref<Array<string>>([])
-const trackedDomains = ref<string[]>([])
+const trackedDomains = ref<DomainList>({})
+const storedDomains = ref<DomainList>({})
 const storage = new LocalStorage()
 
-async function fetchWhitelistedDomains() {
-  let data = await storage.getItem('trackedDomains')
-  trackedDomains.value = data['trackedDomains']
+async function getDomainsFromStorage() {
+  const data = await storage.getItem('trackedDomains')
+  storedDomains.value = data['trackedDomains'] || {}
 }
 
 async function addToDomainsList() {
-  console.log('called')
   invalidDomain.value = false
   try {
     const url = getHostname(addDomain.value)
     if (url) {
-      trackedDomains.value.unshift(url)
+      trackedDomains.value[url] = url
+      storedDomains.value[url] = url
+      await storage.setItem('trackedDomains', toRaw(storedDomains.value))
       addDomain.value = ''
-      await storage.setItem('trackedDomains', toRaw(trackedDomains.value))
     }
   } catch (e) {
     console.error(e)
@@ -100,25 +107,32 @@ async function addToDomainsList() {
   }
 }
 
-// async function removeDomain(domain: string) {
-//   let arr = whitelistedDomains.value.filter((v) => v !== domain)
-//   await storage.setItem('whitelistedDomains', arr)
-//   whitelistedDomains.value = arr
-// }
+async function toggleDomainToStorage(event: Event) {
+  const target = event.target as HTMLInputElement
+  if (target.checked && !storedDomains.value[target.value]) {
+    storedDomains.value[target.value] = target.value
+  } else if (!target.checked && storedDomains.value[target.value]) {
+    delete storedDomains.value[target.value]
+  }
+  await storage.setItem('trackedDomains', toRaw(storedDomains.value))
+}
 
-fetchWhitelistedDomains()
+function isDomainStored(domain: string): boolean {
+  return Object.prototype.hasOwnProperty.call(storedDomains.value, domain)
+}
 
-// browser.runtime.sendMessage({ message: 'popup' })
+getDomainsFromStorage()
 
-// browser.runtime.onMessage.addListener(
-//   ({ message, data }: { message: string; data: any }) => {
-//     if (message === 'popup') {
-//       trackedDomains.value = data
-//       console.log(trackedDomains.value)
-//     }
-//     return true
-//   }
-// )
+browser.runtime.sendMessage({ message: 'popupData' })
+
+browser.runtime.onMessage.addListener(
+  ({ message, data }: { message: string; data: any }) => {
+    if (message === 'popup') {
+      trackedDomains.value = { ...toRaw(storedDomains.value), ...data }
+    }
+    return true
+  }
+)
 </script>
 
 <style scoped>
@@ -128,7 +142,7 @@ ul li {
 
 tr th,
 td {
-  @apply border border-primary p-2;
+  @apply border border-primary p-2 pl-4;
 }
 
 th {

@@ -1,15 +1,21 @@
-import { onMessage } from 'webext-bridge'
 import { Tabs } from 'webextension-polyfill'
-import { addToDomainList } from '~/utils/Common'
+import { DomainList } from '~/types'
+import { getParsedURL } from '~/utils/Common'
 
-const domainsList: Set<string> = new Set()
+const domainsList: DomainList = {}
+let trackedDomains: DomainList = {}
 
 async function updateUI() {
-  await browser.runtime.sendMessage({ message: 'popup', data: domainsList })
+  await browser.runtime.sendMessage({
+    message: 'popup',
+    data: domainsList,
+  })
 }
 
-onMessage('updateUI', () => {
-  updateUI()
+browser.runtime.onMessage.addListener(({ message }: { message: string }) => {
+  if (message === 'popupData') {
+    updateUI()
+  }
 })
 
 // only on dev mode
@@ -25,12 +31,8 @@ browser.runtime.onInstalled.addListener((): void => {
 })
 
 browser.storage.onChanged.addListener((changes: any) => {
-  // whitelistedDomains = changes.newValue.whitelistedDomains
+  trackedDomains = changes.trackedDomains.newValue
 })
-
-setInterval(() => {
-  // console.log(domainsList)
-}, 2000)
 
 // * Window Events
 
@@ -38,7 +40,10 @@ browser.windows.onFocusChanged.addListener(async (windowId: number) => {
   if (windowId !== -1) {
     const tabs = await browser.tabs.query({})
     tabs.forEach((tab: Tabs.Tab) => {
-      addToDomainList(tab, domainsList)
+      const url = getParsedURL(tab, domainsList)
+      if (url) {
+        domainsList[url] = url
+      }
     })
   }
 })
@@ -46,30 +51,45 @@ browser.windows.onFocusChanged.addListener(async (windowId: number) => {
 // * Tab Events
 
 browser.tabs.onCreated.addListener((tab: Tabs.Tab) => {
-  addToDomainList(tab, domainsList)
+  const url = getParsedURL(tab, domainsList)
+  if (url) {
+    domainsList[url] = url
+  }
+  console.log(tab)
+  if (url !== 'newtab' && url) {
+    const obj = {
+      userId: 'test@test.com',
+      eventId: '<userId>|<windowId>|<tabId>|<url>|<datetime>',
+      eventType: 'Tab.onCreated',
+    }
+    // const tab = (({, y, z}) => ({x, y, z}))(tab);
+  }
 })
 
 browser.tabs.onActivated.addListener(async (activeInfo: any) => {
   const tab = await browser.tabs.get(activeInfo.tabId)
-  addToDomainList(tab, domainsList)
+  const url = getParsedURL(tab, domainsList)
+  if (url) {
+    domainsList[url] = url
+  }
 })
 
 browser.tabs.onHighlighted.addListener(async () => {
   const tabs = await browser.tabs.query({})
   tabs.forEach((tab: Tabs.Tab) => {
-    addToDomainList(tab, domainsList)
+    const url = getParsedURL(tab, domainsList)
+    if (url) {
+      domainsList[url] = url
+    }
   })
 })
 
-browser.tabs.onReplaced.addListener(
-  (addedTabId: number, removedTabId: number) => {
-    console.log(addedTabId, removedTabId)
-  }
-)
-
 browser.tabs.onUpdated.addListener(
   (tabId: number, changeInfo: unknown, tab: Tabs.Tab) => {
-    addToDomainList(tab, domainsList)
+    const url = getParsedURL(tab, domainsList)
+    if (url) {
+      domainsList[url] = url
+    }
   }
 )
 

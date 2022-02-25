@@ -1,4 +1,3 @@
 export interface DomainList {
-  url: string
-  tabId: number
+  [url: string]: string
 }
