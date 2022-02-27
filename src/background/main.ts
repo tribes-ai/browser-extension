@@ -1,6 +1,6 @@
 import { Tabs } from 'webextension-polyfill'
 import { DomainList } from '~/types'
-import { getParsedURL } from '~/utils/Common'
+import { getParsedURL, getTabData, getWindowData } from '~/utils/Common'
 
 const domainsList: DomainList = {}
 let trackedDomains: DomainList = {}
@@ -38,11 +38,13 @@ browser.storage.onChanged.addListener((changes: any) => {
 
 browser.windows.onFocusChanged.addListener(async (windowId: number) => {
   if (windowId !== -1) {
+    const window = await browser.windows.getCurrent({ populate: true })
     const tabs = await browser.tabs.query({})
     tabs.forEach((tab: Tabs.Tab) => {
       const url = getParsedURL(tab, domainsList)
       if (url) {
         domainsList[url] = url
+        console.log(getWindowData(url, 'Window.onFocusChanged', window, tabs))
       }
     })
   }
@@ -54,15 +56,7 @@ browser.tabs.onCreated.addListener((tab: Tabs.Tab) => {
   const url = getParsedURL(tab, domainsList)
   if (url) {
     domainsList[url] = url
-  }
-  console.log(tab)
-  if (url !== 'newtab' && url) {
-    const obj = {
-      userId: 'test@test.com',
-      eventId: '<userId>|<windowId>|<tabId>|<url>|<datetime>',
-      eventType: 'Tab.onCreated',
-    }
-    // const tab = (({, y, z}) => ({x, y, z}))(tab);
+    console.log(getTabData(url, 'Tab.onCreated', tab))
   }
 })
 
@@ -71,6 +65,7 @@ browser.tabs.onActivated.addListener(async (activeInfo: any) => {
   const url = getParsedURL(tab, domainsList)
   if (url) {
     domainsList[url] = url
+    console.log(getTabData(url, 'Tab.onActivated', tab))
   }
 })
 
@@ -80,6 +75,7 @@ browser.tabs.onHighlighted.addListener(async () => {
     const url = getParsedURL(tab, domainsList)
     if (url) {
       domainsList[url] = url
+      console.log(getTabData(url, 'Tab.onHighlighted', tab))
     }
   })
 })
@@ -89,6 +85,7 @@ browser.tabs.onUpdated.addListener(
     const url = getParsedURL(tab, domainsList)
     if (url) {
       domainsList[url] = url
+      console.log(getTabData(url, 'Tab.onUpdated', tab))
     }
   }
 )
