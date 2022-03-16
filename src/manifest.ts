@@ -42,6 +42,7 @@ export async function getManifest() {
     content_scripts: [
       {
         matches: ['http://*/*', 'https://*/*'],
+        run_at: 'document_end',
         js: ['./dist/contentScripts/index.global.js'],
       },
     ],
