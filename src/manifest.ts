@@ -27,9 +27,9 @@ export async function getManifest() {
       persistent: false,
     },
     icons: {
-      16: './assets/icon-512.png',
-      48: './assets/icon-512.png',
-      128: './assets/icon-512.png',
+      16: './assets/tribes-logo.png',
+      48: './assets/tribes-logo.png',
+      128: './assets/tribes-logo.png',
     },
     permissions: [
       'tabs',

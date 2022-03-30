@@ -4,7 +4,26 @@
       src="https://cdn.dev.tribes.ai/public/dashboard/images/logo/logo-tribes-ai.png"
       class="max-w-[40%] object-contain -ml-[1.25rem]"
     />
+    <hr class="h-0.75 bg-gray-light" />
+    <div class="flex items-center gap-x-2">
+      <span class="font-medium">Status:</span>
+      <span
+        :class="[
+          extToken ? 'bg-brand-green' : 'bg-brand-red',
+          `w-5 h-5 bg-green rounded-full`,
+        ]"
+      />
+      <p>
+        {{ getLoginText }}
+      </p>
+    </div>
+    <hr class="h-0.75 bg-gray-light" />
     <ul class="space-y-4 flex flex-col justify-start">
+      <li @click.prevent="openPage">
+        <LoginIcon class="w-8 h-8 text-primary" />
+        <a>{{ extToken ? 'Log Out' : 'Log In' }}</a>
+        <ExternalLinkIcon class="w-8 h-8 text-primary" />
+      </li>
       <li>
         <InformationCircleIcon class="w-8 h-8 text-primary" />
         <a> About</a>
@@ -20,13 +39,8 @@
         <a>Settings</a>
         <ExternalLinkIcon class="w-8 h-8 text-primary" />
       </li>
-      <li>
-        <LoginIcon class="w-8 h-8 text-primary" />
-        <a>Login</a>
-        <ExternalLinkIcon class="w-8 h-8 text-primary" />
-      </li>
     </ul>
-    <hr class="h-0.75 bg-primary" />
+    <hr class="h-0.75 bg-gray-light" />
     <h4 class="font-medium text-[1.8rem]">Event Tracking</h4>
     <table class="w-full border-collapse border border-primary">
       <thead>
@@ -68,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRaw } from 'vue'
+import { ref, toRaw, computed } from 'vue'
 import { getHostname } from 'tldts'
 import {
   SupportIcon,
@@ -84,11 +98,14 @@ const addDomain = ref('')
 const invalidDomain = ref(false)
 const trackedDomains = ref<DomainList>({})
 const storedDomains = ref<DomainList>({})
+const extToken = ref('')
 const storage = new LocalStorage()
 
 async function getDomainsFromStorage() {
   const data = await storage.getItem('trackedDomains')
   storedDomains.value = data['trackedDomains'] || {}
+  const token = await storage.getItem('ext-token')
+  extToken.value = token['ext-token']
 }
 
 async function addToDomainsList() {
@@ -120,6 +137,19 @@ async function toggleDomainToStorage(event: Event) {
 function isDomainStored(domain: string): boolean {
   return Object.prototype.hasOwnProperty.call(storedDomains.value, domain)
 }
+
+function openPage() {
+  const url = import.meta.env.VITE_APP_BASE_URL_DEV
+  browser.tabs.create({
+    url: `${url}/login-browser-extension`,
+  })
+}
+
+const getLoginText = computed(() => {
+  return extToken.value
+    ? 'Logged in, tracking active!'
+    : 'Logged out, tracking NOT active!'
+})
 
 getDomainsFromStorage()
 

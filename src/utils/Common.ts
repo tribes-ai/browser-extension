@@ -30,15 +30,19 @@ export function getTabData(
   eventName: string,
   tab: Tabs.Tab,
   ...rest: any
-): TabData | null {
+): TabData {
   if (url !== 'newtab' && url) {
     const datetime = new Date().toISOString()
-    const eventId = `${token}|${tab.windowId}|${tab.id}|${tab.url}|${datetime}`
+    const eventId = `${token}|${tab.windowId}|${datetime}`
+    const timezoneUtcOffset = new Date().getTimezoneOffset()
+    const timezoneId = Intl.DateTimeFormat().resolvedOptions().timeZone
     const data = {
       eventId,
+      timezoneUtcOffset,
+      timezoneId,
+      datetime,
       userId: token,
       eventType: eventName,
-      datetime: datetime,
       data: pick(tab, PICK_FROM_TAB_OBJ) as Tab,
       metaData: {
         created_at: new Date(),
@@ -48,33 +52,32 @@ export function getTabData(
     }
     return data
   }
-  return null
+  return {} as TabData
 }
 
 export function getWindowData(
-  url: string,
   eventName: string,
-  window: Windows.Window,
-  tabs: Tabs.Tab[]
-): WindowData | null {
-  if (url !== 'newtab' && url) {
-    const newTabsData = tabs.map((tab) => pick(tab, PICK_FROM_TAB_OBJ)) as Tab[]
-    const newWindowData = pick(window, PICK_FROM_WINDOW_OBJ) as Window
-    newWindowData.tabs = newTabsData
-    const data = {
-      userId: 'test@test.com',
-      eventId: '<userId>|<windowId>|<tabId>|<url>|<datetime>',
-      eventType: eventName,
-      datetime: new Date().toISOString(),
-      data: newWindowData,
-      metaData: {
-        created_at: new Date(),
-        created_by: 'test',
-      },
-    }
-    return data
+  window: Windows.Window
+): WindowData {
+  const newWindowData = pick(window, PICK_FROM_WINDOW_OBJ) as Window
+  const datetime = new Date().toISOString()
+  const eventId = `${token}|${window.id}|${datetime}`
+  const timezoneUtcOffset = new Date().getTimezoneOffset()
+  const timezoneId = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const data = {
+    eventId,
+    timezoneUtcOffset,
+    timezoneId,
+    userId: token,
+    eventType: eventName,
+    datetime: new Date().toISOString(),
+    data: newWindowData,
+    metaData: {
+      created_at: new Date(),
+      created_by: 'test',
+    },
   }
-  return null
+  return data
 }
 
 // Calculate a string representation of a node's DOM path.

@@ -7,26 +7,28 @@ export interface TabData {
   eventId: string
   eventType: string
   datetime: string
-  data: Tab
+  timezoneUtcOffset: number
+  timezoneId: string
+  data?: Tab
   metaData: Metadata
-  domData: Domdatum[]
+  domData?: Domdatum[]
 }
 
 export interface Tab {
-  active: boolean
-  discarded: boolean
-  groupId: number
-  height: number
-  highlighted: boolean
+  active?: boolean
+  discarded?: boolean
+  groupId?: number
+  height?: number
+  highlighted?: boolean
   id: number
-  incognito: boolean
-  pinned: boolean
-  selected: boolean
-  status: string
-  title: string
-  url: string
-  width: number
-  windowId: number
+  incognito?: boolean
+  pinned?: boolean
+  selected?: boolean
+  status?: string
+  title?: string
+  url?: string
+  width?: number
+  windowId?: number
 }
 
 export interface Domdatum {
@@ -43,19 +45,21 @@ export interface WindowData {
   userId: string
   eventId: string
   eventType: string
+  timezoneUtcOffset: number
+  timezoneId: string
   datetime: string
-  data: Window
+  data?: Window
   metaData: Metadata
 }
 
 export interface Window {
-  alwaysOnTop: boolean
-  focused: boolean
-  height: number
+  alwaysOnTop?: boolean
+  focused?: boolean
+  height?: number
   id: number
-  incognito: boolean
-  state: string
+  incognito?: boolean
+  state?: string
   tabs?: Tab[]
-  type: string
-  width: number
+  type?: string
+  width?: number
 }
