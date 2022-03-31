@@ -13,6 +13,12 @@ let token: string
   token = data['ext-token']
 })()
 
+browser.storage.onChanged.addListener((changes: any) => {
+  if (changes?.['ext-token']) {
+    token = changes?.['ext-token']?.newValue
+  }
+})
+
 export function getParsedURL(
   tab: Tabs.Tab,
   domainsList: DomainList
@@ -20,6 +26,7 @@ export function getParsedURL(
   let hostname = null
   if (tab?.url && !domainsList[tab.url]) {
     hostname = getHostname(tab.url) || ''
+    hostname = hostname.startsWith('www.') ? hostname.substring(4) : hostname
     return hostname
   }
   return hostname

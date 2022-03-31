@@ -42,42 +42,46 @@
     </ul>
     <hr class="h-0.75 bg-gray-light" />
     <h4 class="font-medium text-[1.8rem]">Event Tracking</h4>
-    <table class="w-full border-collapse border border-primary">
-      <thead>
-        <tr class="text-left">
-          <th>Domain</th>
-          <th>Tracked</th>
-        </tr>
-      </thead>
-      <tbody class="max-h-[10rem] overflow-y-auto">
-        <tr>
-          <td>
-            <input
-              v-model="addDomain"
-              class="w-full focus-within:outline-none"
-              type="text"
-              placeholder="Add missing domain here"
-              @keypress.enter="addToDomainsList"
-            />
-          </td>
-          <td class="pl-1">
-            <input type="checkbox" class="accent-primary" checked />
-          </td>
-        </tr>
-        <tr v-for="(domain, key) in trackedDomains" :key="domain">
-          <td>{{ key }}</td>
-          <td>
-            <input
-              type="checkbox"
-              class="accent-primary"
-              :value="domain"
-              :checked="isDomainStored(domain)"
-              @change="toggleDomainToStorage"
-            />
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="flex flex-col max-h-[30vh]">
+      <div class="flex-grow overflow-y-auto">
+        <table class="w-full border border-primary relative">
+          <thead>
+            <tr class="text-left">
+              <th class="sticky top-0 py-3">Domain</th>
+              <th class="sticky top-0 py-3">Tracked</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <input
+                  v-model="addDomain"
+                  class="w-full focus-within:outline-none"
+                  type="text"
+                  placeholder="Add missing domain here"
+                  @keypress.enter="addToDomainsList"
+                />
+              </td>
+              <td class="pl-1">
+                <input type="checkbox" class="accent-primary" checked />
+              </td>
+            </tr>
+            <tr v-for="(domain, key) in trackedDomains" :key="domain">
+              <td>{{ key }}</td>
+              <td>
+                <input
+                  type="checkbox"
+                  class="accent-primary"
+                  :value="domain"
+                  :checked="isDomainStored(domain)"
+                  @change="toggleDomainToStorage"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </template>
 

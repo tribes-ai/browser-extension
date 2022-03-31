@@ -7,6 +7,7 @@ const storage = new LocalStorage()
 
 const domainsList: DomainList = {}
 let trackedDomains: DomainList = {}
+const tabIds = new Set()
 let token: string
 
 //prettier-ignore
@@ -14,8 +15,6 @@ let token: string
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
 })()
-
-//* add code to listen to token changes
 
 async function getTrackedDomains() {
   const data = await storage.getItem('trackedDomains')
@@ -82,6 +81,7 @@ browser.tabs.onCreated.addListener(async (tab: Tabs.Tab) => {
     const url = getParsedURL(tab, domainsList)
     if (url) {
       domainsList[url] = url
+      tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onCreated', tab)
       sendData(data)
     }
@@ -92,10 +92,11 @@ browser.tabs.onCreated.addListener(async (tab: Tabs.Tab) => {
 
 browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
   try {
-    const tab = await browser.tabs.get(tabId)
+    const tab: Tabs.Tab = await browser.tabs.get(tabId)
     const url = getParsedURL(tab, domainsList)
     if (url && trackedDomains[url]) {
       domainsList[url] = url
+      tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onActivated', tab)
       sendData(data)
     }
@@ -111,6 +112,7 @@ browser.tabs.onUpdated.addListener(
         const url = getParsedURL(tab, domainsList)
         if (url && trackedDomains[url]) {
           domainsList[url] = url
+          tabIds.add(tab.id)
           const data = getTabData(url, 'Tab.onUpdated', tab)
           sendData(data)
         }
@@ -145,7 +147,7 @@ browser.runtime.onMessage.addListener(
 
 browser.tabs.onRemoved.addListener(async (tabId: number, removeInfo: any) => {
   try {
-    if (!removeInfo.isWindowClosing) {
+    if (!removeInfo.isWindowClosing && tabIds.has(tabId)) {
       const datetime = new Date().toISOString()
       const eventId = `${token}|${tabId}|${datetime}`
       const timezoneUtcOffset = new Date().getTimezoneOffset()
@@ -165,6 +167,7 @@ browser.tabs.onRemoved.addListener(async (tabId: number, removeInfo: any) => {
         domData: [],
       }
       sendData(data)
+      tabIds.delete(tabId)
     }
   } catch (e) {
     console.error(e)
