@@ -56,6 +56,7 @@ export function getTabData(
         created_by: 'test',
       },
       domData: rest.domData,
+      version: import.meta.env.VITE_APP_VERSION as string,
     }
     return data
   }
@@ -83,6 +84,7 @@ export function getWindowData(
       created_at: new Date(),
       created_by: 'test',
     },
+    version: import.meta.env.VITE_APP_VERSION as string,
   }
   return data
 }

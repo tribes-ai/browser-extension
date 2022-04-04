@@ -165,6 +165,7 @@ browser.tabs.onRemoved.addListener(async (tabId: number, removeInfo: any) => {
         },
         data: { id: tabId },
         domData: [],
+        version: import.meta.env.VITE_APP_VERSION as string,
       }
       sendData(data)
       tabIds.delete(tabId)
@@ -192,6 +193,7 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
         created_at: new Date(),
         created_by: 'test',
       },
+      version: import.meta.env.VITE_APP_VERSION as string,
     }
     sendData(data)
   } catch (e) {

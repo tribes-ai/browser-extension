@@ -12,6 +12,7 @@ export interface TabData {
   data?: Tab
   metaData: Metadata
   domData?: Domdatum[]
+  version: string
 }
 
 export interface Tab {
@@ -50,6 +51,7 @@ export interface WindowData {
   datetime: string
   data?: Window
   metaData: Metadata
+  version: string
 }
 
 export interface Window {

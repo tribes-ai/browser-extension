@@ -1,5 +1,6 @@
 <template>
-  <div class="bg-white w-[40rem] p-8 space-y-8 text-accent">
+  <div class="bg-white w-[40rem] p-8 space-y-8 text-accent relative">
+    <span class="right-5 top-3 absolute"> v {{ appVersion }} </span>
     <img
       src="https://cdn.dev.tribes.ai/public/dashboard/images/logo/logo-tribes-ai.png"
       class="max-w-[40%] object-contain -ml-[1.25rem]"
@@ -103,6 +104,7 @@ const invalidDomain = ref(false)
 const trackedDomains = ref<DomainList>({})
 const storedDomains = ref<DomainList>({})
 const extToken = ref('')
+const appVersion = ref(import.meta.env.VITE_APP_VERSION)
 const storage = new LocalStorage()
 
 async function getDomainsFromStorage() {
