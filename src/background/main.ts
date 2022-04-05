@@ -5,7 +5,6 @@ import LocalStorage from '~/utils/LocalStorage'
 import httpClient from '~/api/httpClient'
 const storage = new LocalStorage()
 
-const domainsList: DomainList = {}
 let trackedDomains: DomainList = {}
 const tabIds = new Set()
 let token: string
@@ -22,19 +21,6 @@ async function getTrackedDomains() {
 }
 
 getTrackedDomains()
-
-async function updateUI() {
-  await browser.runtime.sendMessage({
-    message: 'popup',
-    data: domainsList,
-  })
-}
-
-browser.runtime.onMessage.addListener(({ message }: { message: string }) => {
-  if (message === 'popupData') {
-    updateUI()
-  }
-})
 
 // only on dev mode
 if (import.meta.hot) {
@@ -78,9 +64,8 @@ browser.windows.onFocusChanged.addListener(async (windowId: number) => {
 
 browser.tabs.onCreated.addListener(async (tab: Tabs.Tab) => {
   try {
-    const url = getParsedURL(tab, domainsList)
+    const url = getParsedURL(tab)
     if (url) {
-      domainsList[url] = url
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onCreated', tab)
       sendData(data)
@@ -93,9 +78,8 @@ browser.tabs.onCreated.addListener(async (tab: Tabs.Tab) => {
 browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
   try {
     const tab: Tabs.Tab = await browser.tabs.get(tabId)
-    const url = getParsedURL(tab, domainsList)
+    const url = getParsedURL(tab)
     if (url && trackedDomains[url]) {
-      domainsList[url] = url
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onActivated', tab)
       sendData(data)
@@ -109,9 +93,8 @@ browser.tabs.onUpdated.addListener(
   async (tabId: number, changeInfo: unknown, tab: Tabs.Tab) => {
     try {
       if (tab.status === 'complete') {
-        const url = getParsedURL(tab, domainsList)
+        const url = getParsedURL(tab)
         if (url && trackedDomains[url]) {
-          domainsList[url] = url
           tabIds.add(tab.id)
           const data = getTabData(url, 'Tab.onUpdated', tab)
           sendData(data)
@@ -131,7 +114,7 @@ browser.runtime.onMessage.addListener(
         currentWindow: true,
         active: true,
       })
-      const url = getParsedURL(tab[0], domainsList)
+      const url = getParsedURL(tab[0])
       if (url && trackedDomains[url]) {
         const mTabData = getTabData(url, 'Tab.onClick', tab[0])
         sendData(mTabData)

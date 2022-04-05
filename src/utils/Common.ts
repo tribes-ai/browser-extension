@@ -1,7 +1,7 @@
 import { getHostname } from 'tldts'
 import { Windows, Tabs } from 'webextension-polyfill'
 import { pick } from 'lodash-es'
-import { Tab, DomainList, TabData, WindowData, Window } from '~/types'
+import { Tab, TabData, WindowData, Window } from '~/types'
 import { PICK_FROM_TAB_OBJ, PICK_FROM_WINDOW_OBJ } from '~/utils/Constants'
 import LocalStorage from '~/utils/LocalStorage'
 const storage = new LocalStorage()
@@ -19,12 +19,9 @@ browser.storage.onChanged.addListener((changes: any) => {
   }
 })
 
-export function getParsedURL(
-  tab: Tabs.Tab,
-  domainsList: DomainList
-): string | null {
+export function getParsedURL(tab: Tabs.Tab): string | null {
   let hostname = null
-  if (tab?.url && !domainsList[tab.url]) {
+  if (tab?.url) {
     hostname = getHostname(tab.url) || ''
     hostname = hostname.startsWith('www.') ? hostname.substring(4) : hostname
     return hostname

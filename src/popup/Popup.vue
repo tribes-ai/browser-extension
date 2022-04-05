@@ -20,22 +20,22 @@
     </div>
     <hr class="h-0.75 bg-gray-light" />
     <ul class="space-y-4 flex flex-col justify-start">
-      <li @click.prevent="openPage">
+      <li class="hover:cursor-pointer" @click.prevent="openPage">
         <LoginIcon class="w-8 h-8 text-primary" />
         <a>{{ extToken ? 'Log Out' : 'Log In' }}</a>
         <ExternalLinkIcon class="w-8 h-8 text-primary" />
       </li>
-      <li>
+      <li class="hover:cursor-pointer" @click="openLinkPage('about')">
         <InformationCircleIcon class="w-8 h-8 text-primary" />
         <a> About</a>
         <ExternalLinkIcon class="w-8 h-8 text-primary" />
       </li>
-      <li>
+      <li class="hover:cursor-pointer" @click="openLinkPage('support')">
         <SupportIcon class="w-8 h-8 text-primary" />
         <a>Support</a>
         <ExternalLinkIcon class="w-8 h-8 text-primary" />
       </li>
-      <li>
+      <li class="hover:cursor-pointer" @click="openLinkPage('settings')">
         <CogIcon class="w-8 h-8 text-primary" />
         <a>Settings</a>
         <ExternalLinkIcon class="w-8 h-8 text-primary" />
@@ -98,6 +98,8 @@ import {
 } from '@heroicons/vue/outline'
 import { DomainList } from '~/types'
 import LocalStorage from '~/utils/LocalStorage'
+import { getParsedURL } from '~/utils/Common'
+import type { Tabs } from 'webextension-polyfill'
 
 const addDomain = ref('')
 const invalidDomain = ref(false)
@@ -151,24 +153,44 @@ function openPage() {
   })
 }
 
+function openLinkPage(link: string) {
+  let url = ''
+  switch (link) {
+    case 'about':
+      url = 'https://www.tribes.ai/ '
+      break
+    case 'support':
+      url = 'https://www.tribes.ai/support'
+      break
+    case 'settings':
+      url = 'https://app.dev.tribes.ai/login-browser-extension'
+      break
+  }
+  browser.tabs.create({
+    url,
+  })
+}
+
 const getLoginText = computed(() => {
   return extToken.value
     ? 'Logged in, tracking active!'
     : 'Logged out, tracking NOT active!'
 })
 
-getDomainsFromStorage()
+;(async () => {
+  getDomainsFromStorage()
+  const data = await browser.tabs.query({ currentWindow: true })
+  const obj: DomainList = {}
+  data.forEach((d: Tabs.Tab) => {
+    const url = getParsedURL(d)
+    if (url) {
+      obj[url] = url
+    }
+  })
+  trackedDomains.value = { ...toRaw(storedDomains.value), ...obj }
+})()
 
 browser.runtime.sendMessage({ message: 'popupData' })
-
-browser.runtime.onMessage.addListener(
-  ({ message, data }: { message: string; data: any }) => {
-    if (message === 'popup') {
-      trackedDomains.value = { ...toRaw(storedDomains.value), ...data }
-    }
-    return true
-  }
-)
 </script>
 
 <style scoped>
