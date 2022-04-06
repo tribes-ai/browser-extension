@@ -1,22 +1,49 @@
 <template>
-  <div class="bg-white w-[40rem] p-8 space-y-8 text-accent relative">
-    <span class="right-5 top-3 absolute"> v {{ appVersion }} </span>
-    <img
-      src="https://cdn.dev.tribes.ai/public/dashboard/images/logo/logo-tribes-ai.png"
-      class="max-w-[40%] object-contain -ml-[1.25rem]"
-    />
-    <hr class="h-0.75 bg-gray-light" />
-    <div class="flex items-center gap-x-2">
-      <span class="font-medium">Status:</span>
-      <span
-        :class="[
-          extToken ? 'bg-brand-green' : 'bg-brand-red',
-          `w-5 h-5 bg-green rounded-full`,
-        ]"
+  <div class="bg-white w-[50rem] p-8 space-y-8 text-accent relative">
+    <div class="flex justify-between">
+      <!-- <span class="right-5 top-3 absolute"> v {{ appVersion }} </span> -->
+      <img
+        src="https://cdn.dev.tribes.ai/public/dashboard/images/logo/logo-tribes-ai.png"
+        class="max-w-[25%] object-contain -ml-[1.25rem]"
       />
-      <p>
-        {{ getLoginText }}
-      </p>
+      <ul class="inline-flex gap-x-12">
+        <li class="hover:cursor-pointer" @click="openLinkPage('about')">
+          <InformationCircleIcon class="w-8 h-8 text-primary" />
+          <a> About</a>
+          <ExternalLinkIcon class="w-8 h-8 text-primary" />
+        </li>
+        <li class="hover:cursor-pointer" @click="openLinkPage('support')">
+          <SupportIcon class="w-8 h-8 text-primary" />
+          <a>Support</a>
+          <ExternalLinkIcon class="w-8 h-8 text-primary" />
+        </li>
+      </ul>
+    </div>
+    <hr class="h-0.75 bg-gray-light" />
+    <div class="space-y-4">
+      <div class="flex items-center gap-x-2">
+        <span class="font-medium">Status:</span>
+        <span
+          :class="[
+            extToken ? 'bg-brand-green' : 'bg-brand-red',
+            `w-5 h-5 bg-green rounded-full`,
+          ]"
+        />
+        <p>
+          {{ getLoginText }}
+        </p>
+      </div>
+      <div class="flex gap-x-4 items-center">
+        <BaseInput
+          input-classes="border border-accent flex-grow-1"
+          placeholder="Enter authentication token to activate tracking"
+          :model-value="extToken"
+        />
+        <BaseButton> Save </BaseButton>
+        <BaseButton classes="bg-transparent text-accent shadow-none"
+          >Clear
+        </BaseButton>
+      </div>
     </div>
     <hr class="h-0.75 bg-gray-light" />
     <ul class="space-y-4 flex flex-col justify-start">
@@ -25,16 +52,7 @@
         <a>{{ extToken ? 'Log Out' : 'Log In' }}</a>
         <ExternalLinkIcon class="w-8 h-8 text-primary" />
       </li>
-      <li class="hover:cursor-pointer" @click="openLinkPage('about')">
-        <InformationCircleIcon class="w-8 h-8 text-primary" />
-        <a> About</a>
-        <ExternalLinkIcon class="w-8 h-8 text-primary" />
-      </li>
-      <li class="hover:cursor-pointer" @click="openLinkPage('support')">
-        <SupportIcon class="w-8 h-8 text-primary" />
-        <a>Support</a>
-        <ExternalLinkIcon class="w-8 h-8 text-primary" />
-      </li>
+
       <li class="hover:cursor-pointer" @click="openLinkPage('settings')">
         <CogIcon class="w-8 h-8 text-primary" />
         <a>Settings</a>
@@ -43,45 +61,43 @@
     </ul>
     <hr class="h-0.75 bg-gray-light" />
     <h4 class="font-medium text-[1.8rem]">Event Tracking</h4>
-    <div class="flex flex-col max-h-[30vh]">
-      <div class="flex-grow overflow-y-auto">
-        <table class="w-full border border-primary relative">
-          <thead>
-            <tr class="text-left">
-              <th class="sticky top-0 py-3">Domain</th>
-              <th class="sticky top-0 py-3">Tracked</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <input
-                  v-model="addDomain"
-                  class="w-full focus-within:outline-none"
-                  type="text"
-                  placeholder="Add missing domain here"
-                  @keypress.enter="addToDomainsList"
-                />
-              </td>
-              <td class="pl-1">
-                <input type="checkbox" class="accent-primary" checked />
-              </td>
-            </tr>
-            <tr v-for="(domain, key) in trackedDomains" :key="domain">
-              <td>{{ key }}</td>
-              <td>
-                <input
-                  type="checkbox"
-                  class="accent-primary"
-                  :value="domain"
-                  :checked="isDomainStored(domain)"
-                  @change="toggleDomainToStorage"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="flex-grow overflow-y-auto">
+      <table class="w-full border border-primary relative">
+        <thead>
+          <tr class="text-left">
+            <th class="py-3">Domain</th>
+            <th class="py-3">Tracked</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <input
+                v-model="addDomain"
+                class="w-full focus-within:outline-none"
+                type="text"
+                placeholder="Add missing domain here"
+                @keypress.enter="addToDomainsList"
+              />
+            </td>
+            <td class="pl-1">
+              <input type="checkbox" class="accent-primary" checked />
+            </td>
+          </tr>
+          <tr v-for="(domain, key) in trackedDomains" :key="domain">
+            <td>{{ key }}</td>
+            <td>
+              <input
+                type="checkbox"
+                class="accent-primary"
+                :value="domain"
+                :checked="isDomainStored(domain)"
+                @change="toggleDomainToStorage"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
@@ -195,7 +211,7 @@ browser.runtime.sendMessage({ message: 'popupData' })
 
 <style scoped>
 ul li {
-  @apply flex gap-x-4 items-center;
+  @apply flex gap-x-2 items-center;
 }
 
 tr th,
