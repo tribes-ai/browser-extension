@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "description": "[description]",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "npm run clear && cross-env NODE_ENV=development run-p dev:*",
     "dev:prepare": "esno scripts/prepare.ts",
