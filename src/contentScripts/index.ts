@@ -1,5 +1,6 @@
 import LocalStorage from '~/utils/LocalStorage'
 const storage = new LocalStorage()
+const enableUserEvents = false
 
 const tokenExtractionDomains = [
   'localhost',
@@ -18,7 +19,9 @@ const tokenExtractionDomains = [
       readExtensionToken(intId)
     }, 2000)
   }
-  listenToAllEvents()
+  if (enableUserEvents) {
+    listenToAllEvents()
+  }
 })()
 
 function listenToAllEvents(): void {

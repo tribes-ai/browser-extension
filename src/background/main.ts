@@ -8,11 +8,16 @@ const storage = new LocalStorage()
 let trackedDomains: DomainList = {}
 const tabIds = new Set()
 let token: string
+let eventsArray: TabData[] | WindowData[] = []
+let apiInterval: NodeJS.Timer
 
-//prettier-ignore
-(async () => {
+  //prettier-ignore
+;(async () => {
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
+  apiInterval = setInterval(() => {
+    sendData(eventsArray)
+  }, 120000)
 })()
 
 async function getTrackedDomains() {
@@ -39,7 +44,6 @@ browser.runtime.onInstalled.addListener((): void => {
 browser.storage.onChanged.addListener((changes: any) => {
   if (changes?.trackedDomains) {
     trackedDomains = changes?.trackedDomains?.newValue
-    console.log(trackedDomains)
   }
   if (changes?.['ext-token']) {
     token = changes?.['ext-token']?.newValue
@@ -48,12 +52,17 @@ browser.storage.onChanged.addListener((changes: any) => {
 
 // * Window Events
 
+browser.windows.onCreated.addListener(async () => {
+  const data = await storage.getItem('events-data')
+  eventsArray = JSON.parse(data['events-data'])
+})
+
 browser.windows.onFocusChanged.addListener(async (windowId: number) => {
   try {
     if (windowId !== -1) {
       const window = await browser.windows.getCurrent({ populate: true })
       const data = getWindowData('Window.onFocusChanged', window)
-      sendData(data)
+      eventsArray.push(data)
     }
   } catch (e) {
     console.error(e)
@@ -68,7 +77,7 @@ browser.tabs.onCreated.addListener(async (tab: Tabs.Tab) => {
     if (url) {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onCreated', tab)
-      sendData(data)
+      eventsArray.push(data)
     }
   } catch (e) {
     console.error(e)
@@ -82,10 +91,10 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
     if (url && trackedDomains[url]) {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onActivated', tab)
-      sendData(data)
+      eventsArray.push(data)
     }
   } catch (e) {
-    console.log(e)
+    console.error(e)
   }
 })
 
@@ -97,7 +106,7 @@ browser.tabs.onUpdated.addListener(
         if (url && trackedDomains[url]) {
           tabIds.add(tab.id)
           const data = getTabData(url, 'Tab.onUpdated', tab)
-          sendData(data)
+          eventsArray.push(data)
         }
       }
     } catch (e) {
@@ -117,7 +126,7 @@ browser.runtime.onMessage.addListener(
       const url = getParsedURL(tab[0])
       if (url && trackedDomains[url]) {
         const mTabData = getTabData(url, 'Tab.onClick', tab[0])
-        sendData(mTabData)
+        eventsArray.push(mTabData)
         // const clickData = JSON.parse(data)
         // if (mTabData) {
         //   mTabData.domData = clickData
@@ -150,7 +159,7 @@ browser.tabs.onRemoved.addListener(async (tabId: number, removeInfo: any) => {
         domData: [],
         version: import.meta.env.VITE_APP_VERSION as string,
       }
-      sendData(data)
+      eventsArray.push(data)
       tabIds.delete(tabId)
     }
   } catch (e) {
@@ -178,14 +187,18 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
       },
       version: import.meta.env.VITE_APP_VERSION as string,
     }
-    sendData(data)
+    eventsArray.push(data)
+    clearInterval(apiInterval)
+    storage.setItem('events-data', JSON.stringify(eventsArray))
+    eventsArray.length = 0
   } catch (e) {
     console.error(e)
   }
 })
 
-async function sendData(data: TabData | WindowData) {
+async function sendData(data: TabData[] | WindowData[]) {
   if (token) {
     await httpClient.post('/', data)
+    eventsArray.length = 0
   }
 }
