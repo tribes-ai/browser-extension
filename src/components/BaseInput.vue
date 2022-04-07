@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="w-full">
     <label for="email" class="block text-sm font-medium text-gray-700">
       {{ label }}
     </label>

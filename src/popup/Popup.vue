@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white w-[50rem] p-8 space-y-8 text-accent relative">
+  <div class="bg-white w-[50rem] px-8 py-6 space-y-6 text-accent relative">
     <div class="flex justify-between">
       <!-- <span class="right-5 top-3 absolute"> v {{ appVersion }} </span> -->
       <img
@@ -19,8 +19,8 @@
         </li>
       </ul>
     </div>
-    <hr class="h-0.75 bg-gray-light" />
-    <div class="space-y-4">
+    <hr class="h-0.75 bg-gray-100" />
+    <div class="space-y-3">
       <div class="flex items-center gap-x-2">
         <span class="font-medium">Status:</span>
         <span
@@ -35,7 +35,7 @@
       </div>
       <div class="flex gap-x-4 items-center">
         <BaseInput
-          input-classes="border border-accent flex-grow-1"
+          input-classes="border border-gray-300 flex-grow-1"
           placeholder="Enter authentication token to activate tracking"
           :readonly="extToken ? readonly : false"
           :model-value="extToken"
@@ -50,7 +50,6 @@
         </BaseButton>
       </div>
     </div>
-    <hr class="h-0.75 bg-gray-light" />
     <ul class="space-y-4 flex flex-col justify-start">
       <li
         v-if="!extToken"
@@ -68,7 +67,7 @@
         <ExternalLinkIcon class="w-8 h-8 text-primary" />
       </li>
     </ul>
-    <hr class="h-0.75 bg-gray-light" />
+    <hr class="h-0.75 bg-gray-100" />
     <h4 class="font-medium text-[1.8rem]">Event Tracking</h4>
     <div class="flex-grow overflow-y-auto">
       <table class="w-full border border-primary relative">

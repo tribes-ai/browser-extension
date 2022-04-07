@@ -12,9 +12,12 @@ export default defineConfig({
         primary: '#2E5BFF',
         accent: '#505E75',
         'primary-light': '#F4F7FF',
-        'gray-light': '#E5E5E5',
         'brand-green': '#28C76F',
         'brand-red': '#EA5455',
+        gray: {
+          '100': '#E5E5E5',
+          '300': '#CDD3E1',
+        },
       },
     },
   },
