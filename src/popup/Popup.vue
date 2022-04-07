@@ -1,87 +1,111 @@
 <template>
-  <div class="bg-white w-[40rem] p-8 space-y-8 text-accent relative">
-    <span class="right-5 top-3 absolute"> v {{ appVersion }} </span>
-    <img
-      src="https://cdn.dev.tribes.ai/public/dashboard/images/logo/logo-tribes-ai.png"
-      class="max-w-[40%] object-contain -ml-[1.25rem]"
-    />
-    <hr class="h-0.75 bg-gray-light" />
-    <div class="flex items-center gap-x-2">
-      <span class="font-medium">Status:</span>
-      <span
-        :class="[
-          extToken ? 'bg-brand-green' : 'bg-brand-red',
-          `w-5 h-5 bg-green rounded-full`,
-        ]"
+  <div class="bg-white w-[50rem] px-8 py-6 space-y-6 text-accent relative">
+    <div class="flex justify-between">
+      <!-- <span class="right-5 top-3 absolute"> v {{ appVersion }} </span> -->
+      <img
+        src="https://cdn.dev.tribes.ai/public/dashboard/images/logo/logo-tribes-ai.png"
+        class="max-w-[25%] object-contain -ml-[1.25rem]"
       />
-      <p>
-        {{ getLoginText }}
-      </p>
+      <ul class="inline-flex gap-x-12">
+        <li class="hover:cursor-pointer" @click="openLinkPage('about')">
+          <InformationCircleIcon class="w-8 h-8 text-primary" />
+          <a> About</a>
+          <ExternalLinkIcon class="w-8 h-8 text-primary" />
+        </li>
+        <li class="hover:cursor-pointer" @click="openLinkPage('support')">
+          <SupportIcon class="w-8 h-8 text-primary" />
+          <a>Support</a>
+          <ExternalLinkIcon class="w-8 h-8 text-primary" />
+        </li>
+      </ul>
     </div>
-    <hr class="h-0.75 bg-gray-light" />
+    <hr class="h-0.75 bg-gray-100" />
+    <div class="space-y-3">
+      <div class="flex items-center gap-x-2">
+        <span class="font-medium">Status:</span>
+        <span
+          :class="[
+            extToken ? 'bg-brand-green' : 'bg-brand-red',
+            `w-5 h-5 bg-green rounded-full`,
+          ]"
+        />
+        <p>
+          {{ getLoginText }}
+        </p>
+      </div>
+      <div class="flex gap-x-4 items-center">
+        <BaseInput
+          input-classes="border border-gray-300 flex-grow-1"
+          placeholder="Enter authentication token to activate tracking"
+          :readonly="extToken ? readonly : false"
+          :model-value="extToken"
+          @update:model-value="(newValue) => (tempValue = newValue)"
+        />
+        <BaseButton @click="saveToken"> Save </BaseButton>
+        <BaseButton
+          classes="bg-transparent text-accent shadow-none hover:bg-primary hover:bg-opacity-[.08]"
+          @click="clearToken"
+        >
+          Clear
+        </BaseButton>
+      </div>
+    </div>
     <ul class="space-y-4 flex flex-col justify-start">
-      <li class="hover:cursor-pointer" @click.prevent="openPage">
+      <li
+        v-if="!extToken"
+        class="hover:cursor-pointer"
+        @click.prevent="openPage"
+      >
         <LoginIcon class="w-8 h-8 text-primary" />
-        <a>{{ extToken ? 'Log Out' : 'Log In' }}</a>
+        <a>Log-in to get authentication token</a>
         <ExternalLinkIcon class="w-8 h-8 text-primary" />
       </li>
-      <li class="hover:cursor-pointer" @click="openLinkPage('about')">
-        <InformationCircleIcon class="w-8 h-8 text-primary" />
-        <a> About</a>
-        <ExternalLinkIcon class="w-8 h-8 text-primary" />
-      </li>
-      <li class="hover:cursor-pointer" @click="openLinkPage('support')">
-        <SupportIcon class="w-8 h-8 text-primary" />
-        <a>Support</a>
-        <ExternalLinkIcon class="w-8 h-8 text-primary" />
-      </li>
+
       <li class="hover:cursor-pointer" @click="openLinkPage('settings')">
         <CogIcon class="w-8 h-8 text-primary" />
         <a>Settings</a>
         <ExternalLinkIcon class="w-8 h-8 text-primary" />
       </li>
     </ul>
-    <hr class="h-0.75 bg-gray-light" />
+    <hr class="h-0.75 bg-gray-100" />
     <h4 class="font-medium text-[1.8rem]">Event Tracking</h4>
-    <div class="flex flex-col max-h-[30vh]">
-      <div class="flex-grow overflow-y-auto">
-        <table class="w-full border border-primary relative">
-          <thead>
-            <tr class="text-left">
-              <th class="sticky top-0 py-3">Domain</th>
-              <th class="sticky top-0 py-3">Tracked</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <input
-                  v-model="addDomain"
-                  class="w-full focus-within:outline-none"
-                  type="text"
-                  placeholder="Add missing domain here"
-                  @keypress.enter="addToDomainsList"
-                />
-              </td>
-              <td class="pl-1">
-                <input type="checkbox" class="accent-primary" checked />
-              </td>
-            </tr>
-            <tr v-for="(domain, key) in trackedDomains" :key="domain">
-              <td>{{ key }}</td>
-              <td>
-                <input
-                  type="checkbox"
-                  class="accent-primary"
-                  :value="domain"
-                  :checked="isDomainStored(domain)"
-                  @change="toggleDomainToStorage"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="flex-grow overflow-y-auto">
+      <table class="w-full border border-primary relative">
+        <thead>
+          <tr class="text-left">
+            <th class="py-3">Domain</th>
+            <th class="py-3">Tracked</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <input
+                v-model="addDomain"
+                class="w-full focus-within:outline-none"
+                type="text"
+                placeholder="Add missing domain here"
+                @keypress.enter="addToDomainsList"
+              />
+            </td>
+            <td class="pl-1">
+              <input type="checkbox" class="accent-primary" checked />
+            </td>
+          </tr>
+          <tr v-for="(domain, key) in trackedDomains" :key="domain">
+            <td>{{ key }}</td>
+            <td>
+              <input
+                type="checkbox"
+                class="accent-primary"
+                :value="domain"
+                :checked="isDomainStored(domain)"
+                @change="toggleDomainToStorage"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
@@ -106,7 +130,8 @@ const invalidDomain = ref(false)
 const trackedDomains = ref<DomainList>({})
 const storedDomains = ref<DomainList>({})
 const extToken = ref('')
-const appVersion = ref(import.meta.env.VITE_APP_VERSION)
+const tempValue = ref('')
+// const appVersion = ref(import.meta.env.VITE_APP_VERSION)
 const storage = new LocalStorage()
 
 async function getDomainsFromStorage() {
@@ -171,10 +196,20 @@ function openLinkPage(link: string) {
   })
 }
 
+function saveToken() {
+  extToken.value = tempValue.value
+  storage.setItem('ext-token', extToken.value)
+}
+
+function clearToken() {
+  storage.removeItem('ext-token')
+  extToken.value = ''
+}
+
 const getLoginText = computed(() => {
   return extToken.value
-    ? 'Logged in, tracking active!'
-    : 'Logged out, tracking NOT active!'
+    ? 'Tracking active!'
+    : 'Tracking NOT active, please add token'
 })
 
 ;(async () => {
@@ -189,13 +224,11 @@ const getLoginText = computed(() => {
   })
   trackedDomains.value = { ...toRaw(storedDomains.value), ...obj }
 })()
-
-browser.runtime.sendMessage({ message: 'popupData' })
 </script>
 
 <style scoped>
 ul li {
-  @apply flex gap-x-4 items-center;
+  @apply flex gap-x-2 items-center;
 }
 
 tr th,

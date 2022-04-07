@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="w-full">
     <label for="email" class="block text-sm font-medium text-gray-700">
       {{ label }}
     </label>
@@ -13,6 +13,7 @@
         ]"
         :placeholder="placeholder"
         :value="modelValue"
+        :readonly="readonly"
         @input="$emit('update:modelValue', $event.target.value)"
         @keypress.enter="$emit('enter', $event.target.value)"
       />
@@ -37,6 +38,10 @@ export default defineComponent({
       default: '',
     },
     inputClasses: {
+      type: String,
+      default: '',
+    },
+    readonly: {
       type: String,
       default: '',
     },
