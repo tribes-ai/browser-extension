@@ -44,7 +44,7 @@
         <BaseButton @click="saveToken"> Save </BaseButton>
         <BaseButton
           classes="bg-transparent text-accent shadow-none hover:bg-primary hover:bg-opacity-[.08]"
-          @click="extToken = ''"
+          @click="clearToken"
         >
           Clear
         </BaseButton>
@@ -200,6 +200,11 @@ function openLinkPage(link: string) {
 function saveToken() {
   extToken.value = tempValue.value
   storage.setItem('ext-token', extToken.value)
+}
+
+function clearToken() {
+  storage.removeItem('ext-token')
+  extToken.value = ''
 }
 
 const getLoginText = computed(() => {
