@@ -37,19 +37,28 @@
         <BaseInput
           input-classes="border border-accent flex-grow-1"
           placeholder="Enter authentication token to activate tracking"
+          :readonly="extToken ? readonly : false"
           :model-value="extToken"
+          @update:model-value="(newValue) => (tempValue = newValue)"
         />
-        <BaseButton> Save </BaseButton>
-        <BaseButton classes="bg-transparent text-accent shadow-none"
-          >Clear
+        <BaseButton @click="saveToken"> Save </BaseButton>
+        <BaseButton
+          classes="bg-transparent text-accent shadow-none hover:bg-primary hover:bg-opacity-[.08]"
+          @click="extToken = ''"
+        >
+          Clear
         </BaseButton>
       </div>
     </div>
     <hr class="h-0.75 bg-gray-light" />
     <ul class="space-y-4 flex flex-col justify-start">
-      <li class="hover:cursor-pointer" @click.prevent="openPage">
+      <li
+        v-if="!extToken"
+        class="hover:cursor-pointer"
+        @click.prevent="openPage"
+      >
         <LoginIcon class="w-8 h-8 text-primary" />
-        <a>{{ extToken ? 'Log Out' : 'Log In' }}</a>
+        <a>Log-in to get authentication token</a>
         <ExternalLinkIcon class="w-8 h-8 text-primary" />
       </li>
 
@@ -122,7 +131,8 @@ const invalidDomain = ref(false)
 const trackedDomains = ref<DomainList>({})
 const storedDomains = ref<DomainList>({})
 const extToken = ref('')
-const appVersion = ref(import.meta.env.VITE_APP_VERSION)
+const tempValue = ref('')
+// const appVersion = ref(import.meta.env.VITE_APP_VERSION)
 const storage = new LocalStorage()
 
 async function getDomainsFromStorage() {
@@ -187,10 +197,15 @@ function openLinkPage(link: string) {
   })
 }
 
+function saveToken() {
+  extToken.value = tempValue.value
+  storage.setItem('ext-token', extToken.value)
+}
+
 const getLoginText = computed(() => {
   return extToken.value
-    ? 'Logged in, tracking active!'
-    : 'Logged out, tracking NOT active!'
+    ? 'Tracking active!'
+    : 'Tracking NOT active, please add token'
 })
 
 ;(async () => {
@@ -205,8 +220,6 @@ const getLoginText = computed(() => {
   })
   trackedDomains.value = { ...toRaw(storedDomains.value), ...obj }
 })()
-
-browser.runtime.sendMessage({ message: 'popupData' })
 </script>
 
 <style scoped>
