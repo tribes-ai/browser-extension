@@ -10,7 +10,7 @@ export async function getManifest() {
   // can also be conditional based on your need
   const manifest: Manifest.WebExtensionManifest = {
     manifest_version: 2,
-    name: 'Tribes.ai',
+    name: pkg.displayName,
     version: pkg.version,
     description: pkg.description,
     browser_action: {
@@ -31,14 +31,7 @@ export async function getManifest() {
       48: './assets/tribes-logo.png',
       128: './assets/tribes-logo.png',
     },
-    permissions: [
-      'tabs',
-      'storage',
-      'activeTab',
-      'webNavigation',
-      'http://*/',
-      'https://*/',
-    ],
+    permissions: ['tabs', 'storage', 'activeTab', 'http://*/', 'https://*/'],
     content_scripts: [
       {
         matches: ['http://*/*', 'https://*/*'],
