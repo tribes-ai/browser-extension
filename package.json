@@ -12,7 +12,7 @@
     "dev:js": "npm run build:js -- --mode development",
     "build:dev": "cross-env NODE_ENV=development MODE=production run-s clear build:web build:prepare build:js",
     "build:staging": "cross-env NODE_ENV=staging MODE=production run-s clear build:web build:prepare build:js",
-    "build": "cross-env NODE_ENV=production run-s MODE=production clear build:web build:prepare build:js",
+    "build": "cross-env NODE_ENV=production MODE=production run-s clear build:web build:prepare build:js",
     "build:prepare": "esno scripts/prepare.ts",
     "build:web": "vite build",
     "build:js": "vite build --config vite.config.content.ts",
