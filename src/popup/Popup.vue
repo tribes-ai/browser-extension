@@ -172,7 +172,7 @@ function isDomainStored(domain: string): boolean {
 }
 
 function openPage() {
-  const url = import.meta.env.VITE_APP_BASE_URL_DEV
+  const url = import.meta.env.VITE_APP_BASE_URL
   browser.tabs.create({
     url: `${url}/login-browser-extension`,
   })
@@ -188,7 +188,7 @@ function openLinkPage(link: string) {
       url = 'https://www.tribes.ai/support'
       break
     case 'settings':
-      url = 'https://app.dev.tribes.ai/login-browser-extension'
+      url = `${import.meta.env.VITE_APP_BASE_URL}/login-browser-extension`
       break
   }
   browser.tabs.create({
