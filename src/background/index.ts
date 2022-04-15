@@ -1,4 +1,4 @@
-import { Tabs } from 'webextension-polyfill'
+import browser, { Tabs } from 'webextension-polyfill'
 import { DomainList, TabData, WindowData } from '~/types'
 import { getParsedURL, getTabData, getWindowData } from '~/utils/Common'
 import LocalStorage from '~/utils/LocalStorage'
@@ -16,8 +16,8 @@ let apiInterval: NodeJS.Timer
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
   apiInterval = setInterval(() => {
-    sendData(eventsArray)
-  }, 120000)
+    // sendData(eventsArray)
+  }, 5000)
 })()
 
 async function getTrackedDomains() {
@@ -26,14 +26,6 @@ async function getTrackedDomains() {
 }
 
 getTrackedDomains()
-
-// only on dev mode
-if (import.meta.hot) {
-  // @ts-expect-error for background HMR
-  import('/@vite/client')
-  // load latest content script
-  import('./contentScriptHMR')
-}
 
 browser.runtime.onInstalled.addListener((): void => {
   browser.tabs.create({
@@ -92,6 +84,8 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onActivated', tab)
       eventsArray.push(data)
+      console.log(eventsArray)
+      sendData(eventsArray)
     }
   } catch (e) {
     console.error(e)
@@ -197,8 +191,8 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
 })
 
 async function sendData(data: TabData[] | WindowData[]) {
-  if (token) {
-    await httpClient.post('/', data)
-    eventsArray.length = 0
-  }
+  // if (token) {
+  await httpClient.post('/', data)
+  eventsArray.length = 0
+  // }
 }
