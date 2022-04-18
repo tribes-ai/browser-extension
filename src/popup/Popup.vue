@@ -107,6 +107,7 @@
         </tbody>
       </table>
     </div>
+    {{ appVersion }}
   </div>
 </template>
 
@@ -123,6 +124,7 @@ import {
 import { DomainList } from '~/types'
 import LocalStorage from '~/utils/LocalStorage'
 import { getParsedURL } from '~/utils/Common'
+
 import type { Tabs } from 'webextension-polyfill'
 
 const addDomain = ref('')
@@ -131,8 +133,10 @@ const trackedDomains = ref<DomainList>({})
 const storedDomains = ref<DomainList>({})
 const extToken = ref('')
 const tempValue = ref('')
-// const appVersion = ref(import.meta.env.VITE_APP_VERSION)
+const appVersion = ref(import.meta.env.VITE_APP_VERSION)
 const storage = new LocalStorage()
+
+console.log(import.meta.env.VITE_APP_VERSION)
 
 async function getDomainsFromStorage() {
   const data = await storage.getItem('trackedDomains')
