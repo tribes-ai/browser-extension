@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white w-[50rem] px-8 py-6 space-y-6 text-accent relative">
     <div class="flex justify-between">
-      <!-- <span class="right-5 top-3 absolute"> v {{ appVersion }} </span> -->
+      <span class="right-5 top-3 absolute"> v {{ appVersion }} </span>
       <img
         src="https://cdn.dev.tribes.ai/public/dashboard/images/logo/logo-tribes-ai.png"
         class="max-w-[25%] object-contain -ml-[1.25rem]"
@@ -107,7 +107,6 @@
         </tbody>
       </table>
     </div>
-    {{ appVersion }}
   </div>
 </template>
 
@@ -135,8 +134,6 @@ const extToken = ref('')
 const tempValue = ref('')
 const appVersion = ref(import.meta.env.VITE_APP_VERSION)
 const storage = new LocalStorage()
-
-console.log(import.meta.env.VITE_APP_VERSION)
 
 async function getDomainsFromStorage() {
   const data = await storage.getItem('trackedDomains')

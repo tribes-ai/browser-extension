@@ -16,8 +16,8 @@ let apiInterval: NodeJS.Timer
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
   apiInterval = setInterval(() => {
-    // sendData(trackedEvents)
-  }, 5000)
+    sendData(trackedEvents)
+  }, 120000)
 })()
 
 async function getTrackedDomains() {
@@ -29,7 +29,7 @@ getTrackedDomains()
 
 browser.runtime.onInstalled.addListener((): void => {
   browser.tabs.create({
-    url: 'https://app.dev.tribes.ai/login-browser-extension',
+    url: `${process.env.VITE_APP_BASE_URL}/login-browser-extension`,
   })
 })
 
@@ -84,7 +84,6 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onActivated', tab)
       trackedEvents[data.eventId] = data
-      sendData(trackedEvents)
     }
   } catch (e) {
     console.error(e)
