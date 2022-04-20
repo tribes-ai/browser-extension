@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white w-[50rem] px-8 py-6 space-y-6 text-accent relative">
     <div class="flex justify-between">
-      <!-- <span class="right-5 top-3 absolute"> v {{ appVersion }} </span> -->
+      <span class="right-5 top-3 absolute"> v {{ appVersion }} </span>
       <img
         src="https://cdn.dev.tribes.ai/public/dashboard/images/logo/logo-tribes-ai.png"
         class="max-w-[25%] object-contain -ml-[1.25rem]"
@@ -37,7 +37,7 @@
         <BaseInput
           input-classes="border border-gray-300 flex-grow-1"
           placeholder="Enter authentication token to activate tracking"
-          :readonly="extToken ? readonly : false"
+          :readonly="extToken ? 'readonly' : null"
           :model-value="extToken"
           @update:model-value="(newValue) => (tempValue = newValue)"
         />
@@ -49,6 +49,9 @@
           Clear
         </BaseButton>
       </div>
+      <span v-if="inValidToken" class="text-red-500">
+        {{ tokenError }}
+      </span>
     </div>
     <ul class="space-y-4 flex flex-col justify-start">
       <li
@@ -123,6 +126,7 @@ import {
 import { DomainList } from '~/types'
 import LocalStorage from '~/utils/LocalStorage'
 import { getParsedURL } from '~/utils/Common'
+
 import type { Tabs } from 'webextension-polyfill'
 
 const addDomain = ref('')
@@ -131,7 +135,9 @@ const trackedDomains = ref<DomainList>({})
 const storedDomains = ref<DomainList>({})
 const extToken = ref('')
 const tempValue = ref('')
-// const appVersion = ref(import.meta.env.VITE_APP_VERSION)
+const appVersion = ref(import.meta.env.VITE_APP_VERSION)
+const inValidToken = ref(false)
+const tokenError = ref('')
 const storage = new LocalStorage()
 
 async function getDomainsFromStorage() {
@@ -197,6 +203,23 @@ function openLinkPage(link: string) {
 }
 
 function saveToken() {
+  inValidToken.value = false
+  tokenError.value = ''
+
+  const tokenRegx =
+    /[0-9a-fA-F]{8}[0-9a-fA-F]{4}[0-9a-fA-F]{4}[0-9a-fA-F]{4}[0-9a-fA-F]{12}/
+
+  if (!tempValue.value) {
+    tokenError.value = 'Token is required'
+    inValidToken.value = true
+    return
+  }
+
+  if (!tempValue.value.match(tokenRegx)) {
+    tokenError.value = 'Invalid token format'
+    inValidToken.value = true
+    return
+  }
   extToken.value = tempValue.value
   storage.setItem('ext-token', extToken.value)
 }

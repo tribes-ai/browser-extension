@@ -14,11 +14,14 @@ const tokenExtractionDomains = [
   console.info('[vitesse-webext] Hello world from content script tribes.ai')
   // communication example: send previous tab title from background page
 
-  if (tokenExtractionDomains.includes(window.location.hostname)) {
-    const intId = setInterval(() => {
-      readExtensionToken(intId)
-    }, 2000)
-  }
+  browser.storage.onChanged.addListener((changes: any) => {
+    if (changes?.['ext-token']) {
+      extractToken()
+    }
+  })
+
+  extractToken()
+
   if (enableUserEvents) {
     listenToAllEvents()
   }
@@ -42,6 +45,14 @@ function listenToAllEvents(): void {
       })
     }
   })
+}
+
+function extractToken() {
+  if (tokenExtractionDomains.includes(window.location.hostname)) {
+    const intId = setInterval(() => {
+      readExtensionToken(intId)
+    }, 2000)
+  }
 }
 
 function readExtensionToken(intId: any) {
