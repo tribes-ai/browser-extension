@@ -53,7 +53,7 @@ export function getTabData(
         created_by: 'test',
       },
       domData: rest.domData,
-      version: process.env.APP_VERSION as string,
+      version: process.env.VITE_APP_VERSION as string,
     }
     return data
   }
@@ -81,7 +81,7 @@ export function getWindowData(
       created_at: new Date(),
       created_by: 'test',
     },
-    version: process.env.APP_VERSION as string,
+    version: process.env.VITE_APP_VERSION as string,
   }
   return data
 }

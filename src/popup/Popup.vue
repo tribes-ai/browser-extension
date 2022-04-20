@@ -37,7 +37,7 @@
         <BaseInput
           input-classes="border border-gray-300 flex-grow-1"
           placeholder="Enter authentication token to activate tracking"
-          :readonly="extToken ? readonly : false"
+          :readonly="extToken ? 'readonly' : null"
           :model-value="extToken"
           @update:model-value="(newValue) => (tempValue = newValue)"
         />
@@ -49,6 +49,9 @@
           Clear
         </BaseButton>
       </div>
+      <span v-if="inValidToken" class="text-red-500">
+        {{ tokenError }}
+      </span>
     </div>
     <ul class="space-y-4 flex flex-col justify-start">
       <li
@@ -133,6 +136,8 @@ const storedDomains = ref<DomainList>({})
 const extToken = ref('')
 const tempValue = ref('')
 const appVersion = ref(import.meta.env.VITE_APP_VERSION)
+const inValidToken = ref(false)
+const tokenError = ref('')
 const storage = new LocalStorage()
 
 async function getDomainsFromStorage() {
@@ -198,6 +203,23 @@ function openLinkPage(link: string) {
 }
 
 function saveToken() {
+  inValidToken.value = false
+  tokenError.value = ''
+
+  const tokenRegx =
+    /[0-9a-fA-F]{8}[0-9a-fA-F]{4}[0-9a-fA-F]{4}[0-9a-fA-F]{4}[0-9a-fA-F]{12}/
+
+  if (!tempValue.value) {
+    tokenError.value = 'Token is required'
+    inValidToken.value = true
+    return
+  }
+
+  if (!tempValue.value.match(tokenRegx)) {
+    tokenError.value = 'Invalid token format'
+    inValidToken.value = true
+    return
+  }
   extToken.value = tempValue.value
   storage.setItem('ext-token', extToken.value)
 }

@@ -149,7 +149,7 @@ browser.tabs.onRemoved.addListener(async (tabId: number, removeInfo: any) => {
         },
         data: { id: tabId },
         domData: [],
-        version: process.env.APP_VERSION as string,
+        version: process.env.VITE_APP_VERSION as string,
       }
       trackedEvents[data.eventId] = data
       tabIds.delete(tabId)
@@ -177,7 +177,7 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
         created_at: new Date(),
         created_by: 'test',
       },
-      version: process.env.APP_VERSION as string,
+      version: process.env.VITE_APP_VERSION as string,
     }
     trackedEvents[data.eventId] = data
     clearInterval(apiInterval)
