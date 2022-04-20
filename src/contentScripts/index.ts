@@ -15,11 +15,12 @@ const tokenExtractionDomains = [
   // communication example: send previous tab title from background page
 
   browser.storage.onChanged.addListener((changes: any) => {
-    console.log('test')
     if (changes?.['ext-token']) {
       extractToken()
     }
   })
+
+  extractToken()
 
   if (enableUserEvents) {
     listenToAllEvents()
