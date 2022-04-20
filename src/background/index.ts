@@ -1,14 +1,14 @@
-import { Tabs } from 'webextension-polyfill'
+import browser, { Tabs } from 'webextension-polyfill'
 import { DomainList, TabData, WindowData } from '~/types'
 import { getParsedURL, getTabData, getWindowData } from '~/utils/Common'
 import LocalStorage from '~/utils/LocalStorage'
-import httpClient from '~/api/httpClient'
+import { postData } from '~/api/httpClient'
 const storage = new LocalStorage()
 
 let trackedDomains: DomainList = {}
 const tabIds = new Set()
 let token: string
-let eventsArray: TabData[] | WindowData[] = []
+let trackedEvents: { [key: string]: TabData | WindowData } = {}
 let apiInterval: NodeJS.Timer
 
   //prettier-ignore
@@ -16,7 +16,7 @@ let apiInterval: NodeJS.Timer
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
   apiInterval = setInterval(() => {
-    sendData(eventsArray)
+    sendData(trackedEvents)
   }, 120000)
 })()
 
@@ -27,17 +27,9 @@ async function getTrackedDomains() {
 
 getTrackedDomains()
 
-// only on dev mode
-if (import.meta.hot) {
-  // @ts-expect-error for background HMR
-  import('/@vite/client')
-  // load latest content script
-  import('./contentScriptHMR')
-}
-
 browser.runtime.onInstalled.addListener((): void => {
   browser.tabs.create({
-    url: 'https://app.dev.tribes.ai/login-browser-extension',
+    url: `${process.env.VITE_APP_BASE_URL}/login-browser-extension`,
   })
 })
 
@@ -54,7 +46,7 @@ browser.storage.onChanged.addListener((changes: any) => {
 
 browser.windows.onCreated.addListener(async () => {
   const data = await storage.getItem('events-data')
-  eventsArray = JSON.parse(data['events-data'])
+  trackedEvents = JSON.parse(data['events-data'])
 })
 
 browser.windows.onFocusChanged.addListener(async (windowId: number) => {
@@ -62,7 +54,7 @@ browser.windows.onFocusChanged.addListener(async (windowId: number) => {
     if (windowId !== -1) {
       const window = await browser.windows.getCurrent({ populate: true })
       const data = getWindowData('Window.onFocusChanged', window)
-      eventsArray.push(data)
+      trackedEvents[data.eventId] = data
     }
   } catch (e) {
     console.error(e)
@@ -77,7 +69,7 @@ browser.tabs.onCreated.addListener(async (tab: Tabs.Tab) => {
     if (url) {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onCreated', tab)
-      eventsArray.push(data)
+      trackedEvents[data.eventId] = data
     }
   } catch (e) {
     console.error(e)
@@ -91,7 +83,7 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
     if (url && trackedDomains[url]) {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onActivated', tab)
-      eventsArray.push(data)
+      trackedEvents[data.eventId] = data
     }
   } catch (e) {
     console.error(e)
@@ -106,7 +98,7 @@ browser.tabs.onUpdated.addListener(
         if (url && trackedDomains[url]) {
           tabIds.add(tab.id)
           const data = getTabData(url, 'Tab.onUpdated', tab)
-          eventsArray.push(data)
+          trackedEvents[data.eventId] = data
         }
       }
     } catch (e) {
@@ -126,7 +118,7 @@ browser.runtime.onMessage.addListener(
       const url = getParsedURL(tab[0])
       if (url && trackedDomains[url]) {
         const mTabData = getTabData(url, 'Tab.onClick', tab[0])
-        eventsArray.push(mTabData)
+        trackedEvents[mTabData.eventId] = mTabData
         // const clickData = JSON.parse(data)
         // if (mTabData) {
         //   mTabData.domData = clickData
@@ -157,9 +149,9 @@ browser.tabs.onRemoved.addListener(async (tabId: number, removeInfo: any) => {
         },
         data: { id: tabId },
         domData: [],
-        version: import.meta.env.VITE_APP_VERSION as string,
+        version: process.env.VITE_APP_VERSION as string,
       }
-      eventsArray.push(data)
+      trackedEvents[data.eventId] = data
       tabIds.delete(tabId)
     }
   } catch (e) {
@@ -185,20 +177,21 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
         created_at: new Date(),
         created_by: 'test',
       },
-      version: import.meta.env.VITE_APP_VERSION as string,
+      version: process.env.VITE_APP_VERSION as string,
     }
-    eventsArray.push(data)
+    trackedEvents[data.eventId] = data
     clearInterval(apiInterval)
-    storage.setItem('events-data', JSON.stringify(eventsArray))
-    eventsArray.length = 0
+    storage.setItem('events-data', JSON.stringify(trackedEvents))
+    trackedEvents = {}
   } catch (e) {
     console.error(e)
   }
 })
 
-async function sendData(data: TabData[] | WindowData[]) {
-  if (token) {
-    await httpClient.post('/', data)
-    eventsArray.length = 0
+async function sendData(data: { [key: string]: TabData | WindowData }) {
+  if (token && Object.keys(data).length) {
+    const eventsData = Object.values(data)
+    await postData(eventsData)
+    trackedEvents = {}
   }
 }
