@@ -21,13 +21,6 @@ const tokenExtractionDomains = [
   }
 })()
 
-browser.storage.onChanged.addListener((changes: any) => {
-  console.log(changes)
-  if (changes?.['ext-token']) {
-    extractToken()
-  }
-})
-
 function listenToAllEvents(): void {
   Object.keys(window).forEach((key) => {
     if (/^on/.test(key)) {
