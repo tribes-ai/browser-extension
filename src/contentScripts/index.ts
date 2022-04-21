@@ -14,12 +14,7 @@ const tokenExtractionDomains = [
   console.info('[vitesse-webext] Hello world from content script tribes.ai')
   // communication example: send previous tab title from background page
 
-  browser.storage.onChanged.addListener((changes: any) => {
-    console.log('test')
-    if (changes?.['ext-token']) {
-      extractToken()
-    }
-  })
+  extractToken()
 
   if (enableUserEvents) {
     listenToAllEvents()
