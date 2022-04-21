@@ -191,7 +191,7 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
 async function sendData(data: { [key: string]: TabData | WindowData }) {
   if (token && Object.keys(data).length) {
     const eventsData = Object.values(data)
-    await postData(eventsData)
+    await postData(eventsData, token)
     trackedEvents = {}
   }
 }

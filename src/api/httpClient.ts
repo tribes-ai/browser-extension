@@ -1,17 +1,6 @@
-import LocalStorage from '~/utils/LocalStorage'
-const localStorage = new LocalStorage()
-let data = { 'ext-token': '' }
 const baseURL = process.env.APP_API_URL as string
 
-;(async () => {
-  data = await localStorage.getItem('ext-token')
-})()
-
-browser.storage.onChanged.addListener((changes: any) => {
-  data = changes['ext-token']?.newValue
-})
-
-export const postData = async (payload: any) => {
+export const postData = async (payload: any, token: string) => {
   const response = await fetch(baseURL, {
     method: 'POST',
     mode: 'cors',
@@ -19,7 +8,7 @@ export const postData = async (payload: any) => {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      token: data['ext-token'],
+      token: token,
     },
     body: JSON.stringify(payload),
   })
