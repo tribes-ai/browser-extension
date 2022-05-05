@@ -3,7 +3,11 @@ import { DomainList, TabData, WindowData } from '~/types'
 import { getParsedURL, getTabData, getWindowData } from '~/utils/Common'
 import LocalStorage from '~/utils/LocalStorage'
 import { postData } from '~/api/httpClient'
+import Logger from '~/utils/Logger'
+import statusRed from '~/assets/img/status-red.png'
+import statusBlue from '~/assets/img/status-blue.png'
 const storage = new LocalStorage()
+const logger = new Logger()
 
 let trackedDomains: DomainList = {}
 const tabIds = new Set()
@@ -15,6 +19,7 @@ let apiInterval: NodeJS.Timer
 ;(async () => {
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
+  changeIcon(token)
   apiInterval = setInterval(() => {
     sendData(trackedEvents)
   }, 120000)
@@ -39,6 +44,7 @@ browser.storage.onChanged.addListener((changes: any) => {
   }
   if (changes?.['ext-token']) {
     token = changes?.['ext-token']?.newValue
+    changeIcon(token)
   }
 })
 
@@ -54,10 +60,12 @@ browser.windows.onFocusChanged.addListener(async (windowId: number) => {
     if (windowId !== -1) {
       const window = await browser.windows.getCurrent({ populate: true })
       const data = getWindowData('Window.onFocusChanged', window)
-      trackedEvents[data.eventId] = data
+      if (data) {
+        trackedEvents[data.eventId] = data
+      }
     }
   } catch (e) {
-    console.error(e)
+    logger.error(e)
   }
 })
 
@@ -66,13 +74,15 @@ browser.windows.onFocusChanged.addListener(async (windowId: number) => {
 browser.tabs.onCreated.addListener(async (tab: Tabs.Tab) => {
   try {
     const url = getParsedURL(tab)
-    if (url) {
+    if (url && tab.highlighted) {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onCreated', tab)
-      trackedEvents[data.eventId] = data
+      if (data) {
+        trackedEvents[data.eventId] = data
+      }
     }
   } catch (e) {
-    console.error(e)
+    logger.error(e)
   }
 })
 
@@ -80,29 +90,33 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
   try {
     const tab: Tabs.Tab = await browser.tabs.get(tabId)
     const url = getParsedURL(tab)
-    if (url && trackedDomains[url]) {
+    if (url && trackedDomains[url] && tab.highlighted) {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onActivated', tab)
-      trackedEvents[data.eventId] = data
+      if (data) {
+        trackedEvents[data.eventId] = data
+      }
     }
   } catch (e) {
-    console.error(e)
+    logger.error(e)
   }
 })
 
 browser.tabs.onUpdated.addListener(
   async (tabId: number, changeInfo: unknown, tab: Tabs.Tab) => {
     try {
-      if (tab.status === 'complete') {
+      if (tab.status === 'complete' && tab.highlighted) {
         const url = getParsedURL(tab)
         if (url && trackedDomains[url]) {
           tabIds.add(tab.id)
           const data = getTabData(url, 'Tab.onUpdated', tab)
-          trackedEvents[data.eventId] = data
+          if (data) {
+            trackedEvents[data.eventId] = data
+          }
         }
       }
     } catch (e) {
-      console.error(e)
+      logger.error(e)
     }
   }
 )
@@ -113,12 +127,14 @@ browser.runtime.onMessage.addListener(
       // if (data) {
       const tab = await browser.tabs.query({
         currentWindow: true,
-        active: true,
+        highlighted: true,
       })
       const url = getParsedURL(tab[0])
       if (url && trackedDomains[url]) {
         const mTabData = getTabData(url, 'Tab.onClick', tab[0])
-        trackedEvents[mTabData.eventId] = mTabData
+        if (mTabData) {
+          trackedEvents[mTabData.eventId] = mTabData
+        }
         // const clickData = JSON.parse(data)
         // if (mTabData) {
         //   mTabData.domData = clickData
@@ -134,7 +150,7 @@ browser.tabs.onRemoved.addListener(async (tabId: number, removeInfo: any) => {
     if (!removeInfo.isWindowClosing && tabIds.has(tabId)) {
       const datetime = new Date().toISOString()
       const eventId = `${token}|${tabId}|${datetime}`
-      const timezoneUtcOffset = new Date().getTimezoneOffset()
+      const timezoneUtcOffset = -new Date().getTimezoneOffset()
       const timezoneId = Intl.DateTimeFormat().resolvedOptions().timeZone
       const data: TabData = {
         userId: token,
@@ -143,10 +159,6 @@ browser.tabs.onRemoved.addListener(async (tabId: number, removeInfo: any) => {
         timezoneUtcOffset,
         timezoneId,
         eventType: 'Tab.onRemoved',
-        metaData: {
-          created_at: new Date(),
-          created_by: 'test',
-        },
         data: { id: tabId },
         domData: [],
         version: process.env.VITE_APP_VERSION as string,
@@ -155,7 +167,7 @@ browser.tabs.onRemoved.addListener(async (tabId: number, removeInfo: any) => {
       tabIds.delete(tabId)
     }
   } catch (e) {
-    console.error(e)
+    logger.error(e)
   }
 })
 
@@ -163,7 +175,7 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
   try {
     const datetime = new Date().toISOString()
     const eventId = `${token}|${windowId}|${datetime}`
-    const timezoneUtcOffset = new Date().getTimezoneOffset()
+    const timezoneUtcOffset = -new Date().getTimezoneOffset()
     const timezoneId = Intl.DateTimeFormat().resolvedOptions().timeZone
     const data: WindowData = {
       userId: token,
@@ -173,10 +185,6 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
       timezoneId,
       datetime: new Date().toISOString(),
       data: { id: windowId },
-      metaData: {
-        created_at: new Date(),
-        created_by: 'test',
-      },
       version: process.env.VITE_APP_VERSION as string,
     }
     trackedEvents[data.eventId] = data
@@ -184,14 +192,23 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
     storage.setItem('events-data', JSON.stringify(trackedEvents))
     trackedEvents = {}
   } catch (e) {
-    console.error(e)
+    logger.error(e)
   }
 })
 
 async function sendData(data: { [key: string]: TabData | WindowData }) {
-  if (token && Object.keys(data).length) {
-    const eventsData = Object.values(data)
-    await postData(eventsData, token)
-    trackedEvents = {}
+  try {
+    if (token && Object.keys(data).length) {
+      const eventsData = Object.values(data)
+      await postData(eventsData, token)
+      trackedEvents = {}
+    }
+  } catch (e: unknown) {
+    logger.error(e)
   }
+}
+
+function changeIcon(token: string): void {
+  const icon = token ? statusBlue : statusRed
+  browser.action.setIcon({ path: icon })
 }
