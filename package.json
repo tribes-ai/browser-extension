@@ -1,7 +1,7 @@
 {
   "name": "tribes.ai",
   "displayName": "Tribes.AI",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Smart Time Tracking That Drives Revenue",
   "private": true,
   "license": "MIT",
@@ -29,6 +29,7 @@
     "@heroicons/vue": "^1.0.5",
     "@rollup/plugin-alias": "^3.1.9",
     "@rollup/plugin-commonjs": "^21.1.0",
+    "@rollup/plugin-image": "^2.1.1",
     "@rollup/plugin-node-resolve": "^13.2.1",
     "@types/fs-extra": "^9.0.13",
     "@types/lodash-es": "^4.17.6",

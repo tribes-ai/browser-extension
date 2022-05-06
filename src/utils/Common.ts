@@ -34,11 +34,11 @@ export function getTabData(
   eventName: string,
   tab: Tabs.Tab,
   ...rest: any
-): TabData {
+): TabData | undefined {
   if (url !== 'newtab' && url && token) {
     const datetime = new Date().toISOString()
     const eventId = `${token}|${tab.windowId}|${datetime}`
-    const timezoneUtcOffset = new Date().getTimezoneOffset()
+    const timezoneUtcOffset = -new Date().getTimezoneOffset()
     const timezoneId = Intl.DateTimeFormat().resolvedOptions().timeZone
     const data = {
       eventId,
@@ -48,27 +48,23 @@ export function getTabData(
       userId: token,
       eventType: eventName,
       data: pick(tab, PICK_FROM_TAB_OBJ) as Tab,
-      metaData: {
-        created_at: new Date(),
-        created_by: 'test',
-      },
       domData: rest.domData,
       version: process.env.VITE_APP_VERSION as string,
     }
     return data
   }
-  return {} as TabData
+  return undefined
 }
 
 export function getWindowData(
   eventName: string,
   window: Windows.Window
-): WindowData {
+): WindowData | undefined {
   if (token) {
     const newWindowData = pick(window, PICK_FROM_WINDOW_OBJ) as Window
     const datetime = new Date().toISOString()
     const eventId = `${token}|${window.id}|${datetime}`
-    const timezoneUtcOffset = new Date().getTimezoneOffset()
+    const timezoneUtcOffset = -new Date().getTimezoneOffset()
     const timezoneId = Intl.DateTimeFormat().resolvedOptions().timeZone
     const data = {
       eventId,
@@ -78,15 +74,11 @@ export function getWindowData(
       eventType: eventName,
       datetime: new Date().toISOString(),
       data: newWindowData,
-      metaData: {
-        created_at: new Date(),
-        created_by: 'test',
-      },
       version: process.env.VITE_APP_VERSION as string,
     }
     return data
   }
-  return {} as WindowData
+  return undefined
 }
 
 // Calculate a string representation of a node's DOM path.
