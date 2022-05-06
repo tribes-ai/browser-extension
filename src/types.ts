@@ -10,7 +10,6 @@ export interface TabData {
   timezoneUtcOffset: number
   timezoneId: string
   data?: Tab
-  metaData: Metadata
   domData?: Domdatum[]
   version: string
 }
@@ -50,7 +49,6 @@ export interface WindowData {
   timezoneId: string
   datetime: string
   data?: Window
-  metaData: Metadata
   version: string
 }
 
@@ -64,4 +62,10 @@ export interface Window {
   tabs?: Tab[]
   type?: string
   width?: number
+}
+
+export interface LogEntry {
+  severity: string
+  message: string
+  optional_data?: Record<string, unknown>
 }

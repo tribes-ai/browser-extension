@@ -5,6 +5,7 @@ specifiers:
   '@heroicons/vue': ^1.0.5
   '@rollup/plugin-alias': ^3.1.9
   '@rollup/plugin-commonjs': ^21.1.0
+  '@rollup/plugin-image': ^2.1.1
   '@rollup/plugin-node-resolve': ^13.2.1
   '@types/fs-extra': ^9.0.13
   '@types/lodash-es': ^4.17.6
@@ -51,6 +52,7 @@ devDependencies:
   '@heroicons/vue': 1.0.5_vue@3.2.31
   '@rollup/plugin-alias': 3.1.9
   '@rollup/plugin-commonjs': 21.1.0
+  '@rollup/plugin-image': 2.1.1
   '@rollup/plugin-node-resolve': 13.2.1
   '@types/fs-extra': 9.0.13
   '@types/lodash-es': 4.17.6
@@ -303,6 +305,16 @@ packages:
       is-reference: 1.2.1
       magic-string: 0.25.7
       resolve: 1.22.0
+    dev: true
+
+  /@rollup/plugin-image/2.1.1:
+    resolution: {integrity: sha512-AgP4U85zuQJdUopLUCM+hTf45RepgXeTb8EJsleExVy99dIoYpt3ZlDYJdKmAc2KLkNntCDg6BPJvgJU3uGF+g==}
+    engines: {node: '>= 8.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0 || ^2.0.0
+    dependencies:
+      '@rollup/pluginutils': 3.1.0
+      mini-svg-data-uri: 1.4.4
     dev: true
 
   /@rollup/plugin-node-resolve/13.2.1:
@@ -3659,6 +3671,11 @@ packages:
   /mimic-response/1.0.1:
     resolution: {integrity: sha512-j5EctnkH7amfV/q5Hgmoal1g2QHFJRraOtmx0JpIqkxhBhI/lJSl1nMpQ45hVarwNETOoWEimndZ4QK0RHxuxQ==}
     engines: {node: '>=4'}
+    dev: true
+
+  /mini-svg-data-uri/1.4.4:
+    resolution: {integrity: sha512-r9deDe9p5FJUPZAk3A59wGH7Ii9YrjjWw0jmw/liSbHl2CHiyXj6FcDXDu2K3TjVAXqiJdaw3xxwlZZr9E6nHg==}
+    hasBin: true
     dev: true
 
   /minimatch/3.1.2:

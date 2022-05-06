@@ -39,9 +39,11 @@
           placeholder="Enter authentication token to activate tracking"
           :readonly="extToken ? 'readonly' : null"
           :model-value="extToken"
-          @update:model-value="(newValue) => (tempValue = newValue)"
+          @update:model-value="(newValue: string) => (tempValue = newValue)"
         />
-        <BaseButton @click="saveToken"> Save </BaseButton>
+        <BaseButton :disabled="extToken ? true : false" @click="saveToken">
+          Save
+        </BaseButton>
         <BaseButton
           classes="bg-transparent text-accent shadow-none hover:bg-primary hover:bg-opacity-[.08]"
           @click="clearToken"
@@ -126,6 +128,7 @@ import {
 import { DomainList } from '~/types'
 import LocalStorage from '~/utils/LocalStorage'
 import { getParsedURL } from '~/utils/Common'
+import Logger from '~/utils/Logger'
 
 import type { Tabs } from 'webextension-polyfill'
 
@@ -139,6 +142,7 @@ const appVersion = ref(import.meta.env.VITE_APP_VERSION)
 const inValidToken = ref(false)
 const tokenError = ref('')
 const storage = new LocalStorage()
+const logger = new Logger()
 
 async function getDomainsFromStorage() {
   const data = await storage.getItem('trackedDomains')
@@ -158,7 +162,7 @@ async function addToDomainsList() {
       addDomain.value = ''
     }
   } catch (e) {
-    console.error(e)
+    logger.error(e)
     invalidDomain.value = true
   }
 }
@@ -221,6 +225,7 @@ function saveToken() {
     return
   }
   extToken.value = tempValue.value
+  tempValue.value = ''
   storage.setItem('ext-token', extToken.value)
 }
 
