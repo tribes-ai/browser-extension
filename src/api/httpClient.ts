@@ -1,7 +1,10 @@
 const baseURL = process.env.APP_API_URL as string
 
-export const postData = async (payload: any, token: string) => {
-  const response = await fetch(baseURL, {
+export const postData = async (
+  payload: unknown,
+  token: string
+): Promise<Response> => {
+  const response = await fetch(baseURL + '/event', {
     method: 'POST',
     mode: 'cors',
     cache: 'no-cache',
