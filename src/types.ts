@@ -36,11 +36,6 @@ export interface Domdatum {
   value: string
 }
 
-export interface Metadata {
-  created_at: Date
-  created_by: string
-}
-
 export interface WindowData {
   userId: string
   eventId: string
