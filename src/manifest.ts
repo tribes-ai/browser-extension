@@ -30,8 +30,12 @@ export async function getManifest() {
       48: './assets/tribes-logo.png',
       128: './assets/tribes-logo.png',
     },
-    permissions: ['tabs', 'storage', 'activeTab'],
-    host_permissions: ['*://*/*'],
+    permissions: ['tabs', 'storage', 'activeTab', 'alarms'],
+    host_permissions: [
+      'https://events.dev.tribes.ai/',
+      'https://events.sta.tribes.ai/',
+      'https://events.tribes.ai/',
+    ],
     content_scripts: [
       {
         matches: ['http://*/*', 'https://*/*'],
