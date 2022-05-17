@@ -1,4 +1,4 @@
-import browser, { Tabs } from 'webextension-polyfill'
+import browser, { Tabs, Alarms } from 'webextension-polyfill'
 import { DomainList, TabData, WindowData } from '~/types'
 import { getParsedURL, getTabData, getWindowData } from '~/utils/Common'
 import LocalStorage from '~/utils/LocalStorage'
@@ -6,23 +6,26 @@ import { postData } from '~/api/httpClient'
 import Logger from '~/utils/Logger'
 import statusRed from '~/assets/img/status-red.png'
 import statusBlue from '~/assets/img/status-blue.png'
+import { isEmpty } from 'lodash-es'
 const storage = new LocalStorage()
 const logger = new Logger()
 
 let trackedDomains: DomainList = {}
 const tabIds = new Set()
-let token: string
 let trackedEvents: { [key: string]: TabData | WindowData } = {}
-let apiInterval: NodeJS.Timer
+let token: string
 
   //prettier-ignore
 ;(async () => {
+  createSendEventsAlarm()
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
   changeIcon(token)
-  apiInterval = setInterval(() => {
-    sendData(trackedEvents)
-  }, 120000)
+  browser.alarms.onAlarm.addListener((alarm: Alarms.Alarm) => {
+    if (alarm.name === 'send-events') {
+      sendData(trackedEvents)
+    }
+  })
 })()
 
 async function getTrackedDomains() {
@@ -90,7 +93,7 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
   try {
     const tab: Tabs.Tab = await browser.tabs.get(tabId)
     const url = getParsedURL(tab)
-    if (url && trackedDomains[url] && tab.highlighted) {
+    if (url && trackedDomains[url] && tab.highlighted && tab.active) {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onActivated', tab)
       if (data) {
@@ -105,7 +108,7 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
 browser.tabs.onUpdated.addListener(
   async (tabId: number, changeInfo: unknown, tab: Tabs.Tab) => {
     try {
-      if (tab.status === 'complete' && tab.highlighted) {
+      if (tab.status === 'complete' && tab.highlighted && tab.active) {
         const url = getParsedURL(tab)
         if (url && trackedDomains[url]) {
           tabIds.add(tab.id)
@@ -128,6 +131,7 @@ browser.runtime.onMessage.addListener(
       const tab = await browser.tabs.query({
         currentWindow: true,
         highlighted: true,
+        active: true,
       })
       const url = getParsedURL(tab[0])
       if (url && trackedDomains[url]) {
@@ -188,9 +192,9 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
       version: process.env.VITE_APP_VERSION as string,
     }
     trackedEvents[data.eventId] = data
-    clearInterval(apiInterval)
     storage.setItem('events-data', JSON.stringify(trackedEvents))
     trackedEvents = {}
+    await browser.alarms.clearAll()
   } catch (e) {
     logger.error(e)
   }
@@ -198,7 +202,7 @@ browser.windows.onRemoved.addListener(async (windowId: number) => {
 
 async function sendData(data: { [key: string]: TabData | WindowData }) {
   try {
-    if (token && Object.keys(data).length) {
+    if (token && !isEmpty(data)) {
       const eventsData = Object.values(data)
       await postData(eventsData, token)
       trackedEvents = {}
@@ -211,4 +215,10 @@ async function sendData(data: { [key: string]: TabData | WindowData }) {
 function changeIcon(token: string): void {
   const icon = token ? statusBlue : statusRed
   browser.action.setIcon({ path: icon })
+}
+
+function createSendEventsAlarm(): void {
+  browser.alarms.get('send-events').then((a) => {
+    if (!a) browser.alarms.create('send-events', { periodInMinutes: 1.0 })
+  })
 }
