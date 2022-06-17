@@ -7,6 +7,7 @@ import Logger from '~/utils/Logger'
 import statusRed from '~/assets/img/status-red.png'
 import statusBlue from '~/assets/img/status-blue.png'
 import { isEmpty } from 'lodash-es'
+import { getHostname } from 'tldts'
 const storage = new LocalStorage()
 const logger = new Logger()
 
@@ -62,8 +63,12 @@ browser.windows.onFocusChanged.addListener(async (windowId: number) => {
   try {
     if (windowId !== -1) {
       const window = await browser.windows.getCurrent({ populate: true })
+      const isTrackedURL = window.tabs?.some(
+        (tab: Tabs.Tab) =>
+          trackedDomains[getHostname(tab.url as string) as string]
+      )
       const data = getWindowData('Window.onFocusChanged', window)
-      if (data) {
+      if (data && isTrackedURL) {
         trackedEvents[data.eventId] = data
       }
     }
