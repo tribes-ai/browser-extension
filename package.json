@@ -1,7 +1,7 @@
 {
   "name": "tribes.ai",
   "displayName": "Tribes.AI",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Smart Time Tracking That Drives Revenue",
   "private": true,
   "license": "MIT",
@@ -11,7 +11,7 @@
     "dev:web": "vite",
     "build": "run-s clear build:*",
     "build:prepare": "esno scripts/prepare.ts",
-    "build:dev": "vite build --mode development && rollup -c --environment NODE_ENV:development",
+    "build:dev": "vite build --mode development && rollup -c --environment NODE_ENV:development -w",
     "build:sta": "vite build --mode staging && rollup -c --environment NODE_ENV:staging",
     "build:prod": "vite build --mode production && rollup -c --environment NODE_ENV:production",
     "pack": "cross-env NODE_ENV=production run-p pack:*",
