@@ -1,13 +1,12 @@
 import browser, { Tabs, Alarms } from 'webextension-polyfill'
 import { DomainList, TabData, WindowData } from '~/types'
-import { getParsedURL, getTabData, getWindowData } from '~/utils/Common'
+import { getParsedURL, getTabData } from '~/utils/Common'
 import LocalStorage from '~/utils/LocalStorage'
 import { postData } from '~/api/httpClient'
 import Logger from '~/utils/Logger'
 import statusRed from '~/assets/img/status-red.png'
 import statusBlue from '~/assets/img/status-blue.png'
 import { isEmpty } from 'lodash-es'
-import { getHostname } from 'tldts'
 const storage = new LocalStorage()
 const logger = new Logger()
 
