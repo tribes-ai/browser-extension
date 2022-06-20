@@ -1,6 +1,6 @@
 import browser, { Tabs, Alarms } from 'webextension-polyfill'
 import { DomainList, TabData, WindowData } from '~/types'
-import { getParsedURL, getTabData, getWindowData } from '~/utils/Common'
+import { getParsedURL, getTabData } from '~/utils/Common'
 import LocalStorage from '~/utils/LocalStorage'
 import { postData } from '~/api/httpClient'
 import Logger from '~/utils/Logger'
@@ -58,19 +58,26 @@ browser.windows.onCreated.addListener(async () => {
   trackedEvents = JSON.parse(data['events-data'])
 })
 
-browser.windows.onFocusChanged.addListener(async (windowId: number) => {
-  try {
-    if (windowId !== -1) {
-      const window = await browser.windows.getCurrent({ populate: true })
-      const data = getWindowData('Window.onFocusChanged', window)
-      if (data) {
-        trackedEvents[data.eventId] = data
-      }
-    }
-  } catch (e) {
-    logger.error(e)
-  }
-})
+/*
+ * * commented/removed as part of https://tribes-ai.atlassian.net/browse/TRI-3393?focusedCommentId=40847
+ */
+// browser.windows.onFocusChanged.addListener(async (windowId: number) => {
+//   try {
+//     if (windowId !== -1) {
+//       const window = await browser.windows.getCurrent({ populate: true })
+//       const isTrackedURL = window.tabs?.some(
+//         (tab: Tabs.Tab) =>
+//           trackedDomains[getHostname(tab.url as string) as string]
+//       )
+//       const data = getWindowData('Window.onFocusChanged', window)
+//       if (data && isTrackedURL) {
+//         trackedEvents[data.eventId] = data
+//       }
+//     }
+//   } catch (e) {
+//     logger.error(e)
+//   }
+// })
 
 // * Tab Events
 
