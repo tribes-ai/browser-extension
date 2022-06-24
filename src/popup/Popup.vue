@@ -79,7 +79,8 @@
         <thead>
           <tr class="text-left">
             <th class="py-3">Domain</th>
-            <th class="py-3">Tracked</th>
+            <th class="py-3">Track</th>
+            <th class="py-3">Block</th>
           </tr>
         </thead>
         <tbody>
@@ -97,7 +98,7 @@
               <input type="checkbox" class="accent-primary" checked />
             </td>
           </tr>
-          <tr v-for="(domain, key) in trackedDomains" :key="domain">
+          <tr v-for="(domain, key) in getAllDomains" :key="domain">
             <td>{{ key }}</td>
             <td>
               <input
@@ -105,6 +106,15 @@
                 class="accent-primary"
                 :value="domain"
                 :checked="isDomainStored(domain)"
+                @change="toggleDomainToStorage"
+              />
+            </td>
+            <td>
+              <input
+                type="checkbox"
+                :value="domain"
+                :disabled="isDomainBlocked(domain)"
+                :checked="isDomainBlocked(domain)"
                 @change="toggleDomainToStorage"
               />
             </td>
@@ -143,12 +153,17 @@ const inValidToken = ref(false)
 const tokenError = ref('')
 const storage = new LocalStorage()
 const logger = new Logger()
+const blockedDomains = ref<DomainList>({})
 
-async function getDomainsFromStorage() {
+async function getObjectsFromStorage() {
   const data = await storage.getItem('trackedDomains')
   storedDomains.value = data['trackedDomains'] || {}
+
   const token = await storage.getItem('ext-token')
   extToken.value = token['ext-token']
+
+  const bData = await storage.getItem('blockedDomains')
+  blockedDomains.value = bData['blockedDomains'] || {}
 }
 
 async function addToDomainsList() {
@@ -179,6 +194,10 @@ async function toggleDomainToStorage(event: Event) {
 
 function isDomainStored(domain: string): boolean {
   return Object.prototype.hasOwnProperty.call(storedDomains.value, domain)
+}
+
+function isDomainBlocked(domain: string): boolean {
+  return Object.prototype.hasOwnProperty.call(blockedDomains.value, domain)
 }
 
 function openPage() {
@@ -240,8 +259,12 @@ const getLoginText = computed(() => {
     : 'Tracking NOT active, please add token'
 })
 
+const getAllDomains = computed(() => {
+  return { ...trackedDomains.value, ...blockedDomains.value }
+})
+
 ;(async () => {
-  getDomainsFromStorage()
+  getObjectsFromStorage()
   const data = await browser.tabs.query({ currentWindow: true })
   const obj: DomainList = {}
   data.forEach((d: Tabs.Tab) => {

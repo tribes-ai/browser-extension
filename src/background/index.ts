@@ -2,28 +2,42 @@ import browser, { Tabs, Alarms } from 'webextension-polyfill'
 import { DomainList, TabData, WindowData } from '~/types'
 import { getParsedURL, getTabData } from '~/utils/Common'
 import LocalStorage from '~/utils/LocalStorage'
-import { postData } from '~/api/httpClient'
+import ApiManager from '~/api'
 import Logger from '~/utils/Logger'
 import statusRed from '~/assets/img/status-red.png'
 import statusBlue from '~/assets/img/status-blue.png'
 import { isEmpty } from 'lodash-es'
+
 const storage = new LocalStorage()
 const logger = new Logger()
-
 let trackedDomains: DomainList = {}
+const apiService = ApiManager()
 const tabIds = new Set()
+const graphqlAPIURL = process.env.APP_GRAPHQL_URL
 let trackedEvents: { [key: string]: TabData | WindowData } = {}
 let token: string
 
   //prettier-ignore
 ;(async () => {
+  browser.alarms.clearAll()
   createSendEventsAlarm()
+  createFetchDomainsAlarm()
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
   changeIcon(token)
-  browser.alarms.onAlarm.addListener((alarm: Alarms.Alarm) => {
+  browser.alarms.onAlarm.addListener(async (alarm: Alarms.Alarm) => {
     if (alarm.name === 'send-events') {
       sendData(trackedEvents)
+    }
+    if (alarm.name === 'fetch-domains') {
+      const res = await apiService('', graphqlAPIURL).fetchBlockedDomains({
+        token,
+      })
+      let blockedDomains = res.data?.blockedDomains.items
+      blockedDomains = blockedDomains.reduce((prev: any, curr: any) => {
+        return { ...prev, [curr]: curr }
+      }, {})
+      await storage.setItem('blockedDomains', blockedDomains)
     }
   })
 })()
@@ -211,7 +225,7 @@ async function sendData(data: { [key: string]: TabData | WindowData }) {
   try {
     if (token && !isEmpty(data)) {
       const eventsData = Object.values(data)
-      await postData(eventsData, token)
+      await apiService(token).saveEvents(eventsData)
       trackedEvents = {}
     }
   } catch (e: unknown) {
@@ -226,6 +240,16 @@ function changeIcon(token: string): void {
 
 function createSendEventsAlarm(): void {
   browser.alarms.get('send-events').then((a) => {
-    if (!a) browser.alarms.create('send-events', { periodInMinutes: 1.0 })
+    if (!a) {
+      browser.alarms.create('send-events', { periodInMinutes: 1.0 })
+    }
+  })
+}
+
+function createFetchDomainsAlarm(): void {
+  browser.alarms.get('fetch-domains').then((a) => {
+    if (!a) {
+      browser.alarms.create('fetch-domains', { periodInMinutes: 0.1 })
+    }
   })
 }
