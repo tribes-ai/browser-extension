@@ -14,9 +14,34 @@ export class ApiService {
     return this.httpClient('/event', options)
   }
 
-  async fetchBlockedDomains(payload: any): Promise<any> {
+  async fetchBlockedDomains(payload: { token: string }): Promise<any> {
     const graphqlQuery = {
       query: 'query { blockedDomains{ items } }',
+    }
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        userId: payload.token,
+      },
+      body: JSON.stringify(graphqlQuery),
+    }
+    const res = await this.httpClient('/graphql', options)
+    return res.json()
+  }
+
+  async fetchUserAndAdminDomains(payload: { token: string }): Promise<any> {
+    const graphqlQuery = {
+      query: `
+      query {
+        userWhitelistedDomains{
+          items{
+            whitelistId
+            domain
+            status
+          }
+        }
+      }`,
     }
     const options = {
       method: 'POST',

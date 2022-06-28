@@ -13,7 +13,7 @@ const logger = new Logger()
 let trackedDomains: DomainList = {}
 const apiService = ApiManager()
 const tabIds = new Set()
-const graphqlAPIURL = process.env.APP_GRAPHQL_URL
+const graphqlAPIURL = process.env.VITE_APP_GRAPHQL_URL
 let trackedEvents: { [key: string]: TabData | WindowData } = {}
 let token: string
 
@@ -35,7 +35,7 @@ let token: string
       })
       let blockedDomains = res.data?.blockedDomains.items
       blockedDomains = blockedDomains.reduce((prev: any, curr: any) => {
-        return { ...prev, [curr]: curr }
+        return { ...prev, [curr]: { curr, isBlocked: true } }
       }, {})
       await storage.setItem('blockedDomains', blockedDomains)
     }
@@ -249,7 +249,7 @@ function createSendEventsAlarm(): void {
 function createFetchDomainsAlarm(): void {
   browser.alarms.get('fetch-domains').then((a) => {
     if (!a) {
-      browser.alarms.create('fetch-domains', { periodInMinutes: 0.1 })
+      browser.alarms.create('fetch-domains', { periodInMinutes: 5.0 })
     }
   })
 }

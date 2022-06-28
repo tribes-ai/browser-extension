@@ -98,14 +98,14 @@
               <input type="checkbox" class="accent-primary" checked />
             </td>
           </tr>
-          <tr v-for="(domain, key) in getAllDomains" :key="domain">
+          <tr v-for="(domain, key) in getAllDomains" :key="domain.url">
             <td>{{ key }}</td>
             <td>
               <input
                 type="checkbox"
                 class="accent-primary"
                 :value="domain"
-                :checked="isDomainStored(domain)"
+                :checked="domain.isActive"
                 @change="toggleDomainToStorage"
               />
             </td>
@@ -113,8 +113,8 @@
               <input
                 type="checkbox"
                 :value="domain"
-                :disabled="isDomainBlocked(domain)"
-                :checked="isDomainBlocked(domain)"
+                :disabled="domain.isBlocked"
+                :checked="domain.isBlocked"
                 @change="toggleDomainToStorage"
               />
             </td>
@@ -135,12 +135,16 @@ import {
   LoginIcon,
   ExternalLinkIcon,
 } from '@heroicons/vue/outline'
+import type { Tabs } from 'webextension-polyfill'
+
 import { DomainList } from '~/types'
 import LocalStorage from '~/utils/LocalStorage'
 import { getParsedURL } from '~/utils/Common'
 import Logger from '~/utils/Logger'
+import ApiManager from '~/api'
 
-import type { Tabs } from 'webextension-polyfill'
+const graphqlURL = import.meta.env.VITE_APP_GRAPHQL_URL
+const apiManager = ApiManager()
 
 const addDomain = ref('')
 const invalidDomain = ref(false)
@@ -171,8 +175,8 @@ async function addToDomainsList() {
   try {
     const url = getHostname(addDomain.value)
     if (url) {
-      trackedDomains.value[url] = url
-      storedDomains.value[url] = url
+      trackedDomains.value[url] = { url }
+      storedDomains.value[url] = { url }
       await storage.setItem('trackedDomains', toRaw(storedDomains.value))
       addDomain.value = ''
     }
@@ -185,19 +189,11 @@ async function addToDomainsList() {
 async function toggleDomainToStorage(event: Event) {
   const target = event.target as HTMLInputElement
   if (target.checked && !storedDomains.value[target.value]) {
-    storedDomains.value[target.value] = target.value
+    storedDomains.value[target.value] = { url: target.value }
   } else if (!target.checked && storedDomains.value[target.value]) {
     delete storedDomains.value[target.value]
   }
   await storage.setItem('trackedDomains', toRaw(storedDomains.value))
-}
-
-function isDomainStored(domain: string): boolean {
-  return Object.prototype.hasOwnProperty.call(storedDomains.value, domain)
-}
-
-function isDomainBlocked(domain: string): boolean {
-  return Object.prototype.hasOwnProperty.call(blockedDomains.value, domain)
 }
 
 function openPage() {
@@ -263,17 +259,51 @@ const getAllDomains = computed(() => {
   return { ...trackedDomains.value, ...blockedDomains.value }
 })
 
-;(async () => {
-  getObjectsFromStorage()
-  const data = await browser.tabs.query({ currentWindow: true })
+async function fetchUserDomains() {
+  const res = await apiManager('', graphqlURL).fetchUserAndAdminDomains({
+    token: extToken.value,
+  })
+
+  return res?.data?.userWhitelistedDomains?.items.reduce(
+    (prev: any, curr: any) => {
+      return {
+        ...prev,
+        [curr.domain]: { url: curr.domain, isActive: curr.status === 'active' },
+      }
+    },
+    {}
+  )
+}
+
+async function getTabsInCurrentWindow() {
   const obj: DomainList = {}
+  const data = await browser.tabs.query({ currentWindow: true })
   data.forEach((d: Tabs.Tab) => {
     const url = getParsedURL(d)
     if (url) {
-      obj[url] = url
+      obj[url] = { url }
     }
   })
-  trackedDomains.value = { ...toRaw(storedDomains.value), ...obj }
+  return obj
+}
+
+;(async () => {
+  let currentTabs = await getTabsInCurrentWindow()
+  trackedDomains.value = { ...currentTabs }
+
+  await getObjectsFromStorage()
+
+  trackedDomains.value = {
+    ...toRaw(storedDomains.value),
+    ...toRaw(trackedDomains.value),
+  }
+
+  const userDomains = await fetchUserDomains()
+
+  trackedDomains.value = {
+    ...userDomains,
+    ...toRaw(trackedDomains.value),
+  }
 })()
 </script>
 
