@@ -15,6 +15,7 @@ const apiService = ApiManager()
 const tabIds = new Set()
 const graphqlAPIURL = process.env.VITE_APP_GRAPHQL_URL
 let trackedEvents: { [key: string]: TabData | WindowData } = {}
+let blockedDomains: DomainList
 let token: string
 
   //prettier-ignore
@@ -22,6 +23,7 @@ let token: string
   browser.alarms.clearAll()
   createSendEventsAlarm()
   createFetchDomainsAlarm()
+  getTrackedDomains()
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
   changeIcon(token)
@@ -33,10 +35,19 @@ let token: string
       const res = await apiService('', graphqlAPIURL).fetchBlockedDomains({
         token,
       })
-      let blockedDomains = res.data?.blockedDomains.items
-      blockedDomains = blockedDomains.reduce((prev: any, curr: any) => {
-        return { ...prev, [curr]: { curr, isBlocked: true } }
-      }, {})
+      blockedDomains = res.data?.blockedDomains?.items?.reduce(
+        (prev: any, curr: any) => {
+          return {
+            ...prev,
+            [curr]: {
+              url: getParsedURL(curr),
+              isBlocked: true,
+              isActive: false,
+            },
+          }
+        },
+        {}
+      )
       await storage.setItem('blockedDomains', blockedDomains)
     }
   })
@@ -46,8 +57,6 @@ async function getTrackedDomains() {
   const data = await storage.getItem('trackedDomains')
   trackedDomains = data['trackedDomains'] || {}
 }
-
-getTrackedDomains()
 
 browser.runtime.onInstalled.addListener((): void => {
   browser.tabs.create({
@@ -122,7 +131,7 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
       }
     }
   } catch (e) {
-    logger.error(e)
+    // logger.error(e)
   }
 })
 
@@ -196,30 +205,33 @@ browser.tabs.onRemoved.addListener(async (tabId: number, removeInfo: any) => {
   }
 })
 
-browser.windows.onRemoved.addListener(async (windowId: number) => {
-  try {
-    const datetime = new Date().toISOString()
-    const eventId = `${token}|${windowId}|${datetime}`
-    const timezoneUtcOffset = -new Date().getTimezoneOffset()
-    const timezoneId = Intl.DateTimeFormat().resolvedOptions().timeZone
-    const data: WindowData = {
-      userId: token,
-      eventId,
-      eventType: 'Window.onRemoved',
-      timezoneUtcOffset,
-      timezoneId,
-      datetime: new Date().toISOString(),
-      data: { id: windowId },
-      version: process.env.VITE_APP_VERSION as string,
-    }
-    trackedEvents[data.eventId] = data
-    storage.setItem('events-data', JSON.stringify(trackedEvents))
-    trackedEvents = {}
-    await browser.alarms.clearAll()
-  } catch (e) {
-    logger.error(e)
-  }
-})
+/*
+ * * commented/removed as part of https://tribes-ai.atlassian.net/browse/TRI-3393?focusedCommentId=40847
+ */
+// browser.windows.onRemoved.addListener(async (windowId: number) => {
+//   try {
+//     const datetime = new Date().toISOString()
+//     const eventId = `${token}|${windowId}|${datetime}`
+//     const timezoneUtcOffset = -new Date().getTimezoneOffset()
+//     const timezoneId = Intl.DateTimeFormat().resolvedOptions().timeZone
+//     const data: WindowData = {
+//       userId: token,
+//       eventId,
+//       eventType: 'Window.onRemoved',
+//       timezoneUtcOffset,
+//       timezoneId,
+//       datetime: new Date().toISOString(),
+//       data: { id: windowId },
+//       version: process.env.VITE_APP_VERSION as string,
+//     }
+//     trackedEvents[data.eventId] = data
+//     storage.setItem('events-data', JSON.stringify(trackedEvents))
+//     trackedEvents = {}
+//     await browser.alarms.clearAll()
+//   } catch (e) {
+//     logger.error(e)
+//   }
+// })
 
 async function sendData(data: { [key: string]: TabData | WindowData }) {
   try {
@@ -249,7 +261,7 @@ function createSendEventsAlarm(): void {
 function createFetchDomainsAlarm(): void {
   browser.alarms.get('fetch-domains').then((a) => {
     if (!a) {
-      browser.alarms.create('fetch-domains', { periodInMinutes: 5.0 })
+      browser.alarms.create('fetch-domains', { periodInMinutes: 1.0 })
     }
   })
 }

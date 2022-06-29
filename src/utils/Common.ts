@@ -19,10 +19,14 @@ browser.storage.onChanged.addListener((changes: any) => {
   }
 })
 
-export function getParsedURL(tab: Tabs.Tab): string | null {
+export function getParsedURL(tab: Tabs.Tab | string): string | null {
   let hostname = null
-  if (tab?.url) {
+  if (typeof tab === 'string') {
+    hostname = getHostname(tab) || ''
+  } else if (tab?.url) {
     hostname = getHostname(tab.url) || ''
+  }
+  if (hostname) {
     hostname = hostname.startsWith('www.') ? hostname.substring(4) : hostname
     return hostname
   }

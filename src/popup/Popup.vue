@@ -97,8 +97,11 @@
             <td class="pl-1">
               <input type="checkbox" class="accent-primary" checked />
             </td>
+            <td>
+              <input type="checkbox" disabled />
+            </td>
           </tr>
-          <tr v-for="(domain, key) in getAllDomains" :key="domain.url">
+          <tr v-for="(domain, key) in trackedDomains" :key="domain.url">
             <td>{{ key }}</td>
             <td>
               <input
@@ -106,16 +109,17 @@
                 class="accent-primary"
                 :value="domain"
                 :checked="domain.isActive"
-                @change="toggleDomainToStorage"
+                :disabled="domain.isBlocked"
+                @change="toggleDomainToStorage($event, domain)"
               />
             </td>
+
             <td>
               <input
                 type="checkbox"
+                disabled
                 :value="domain"
-                :disabled="domain.isBlocked"
                 :checked="domain.isBlocked"
-                @change="toggleDomainToStorage"
               />
             </td>
           </tr>
@@ -157,17 +161,18 @@ const inValidToken = ref(false)
 const tokenError = ref('')
 const storage = new LocalStorage()
 const logger = new Logger()
-const blockedDomains = ref<DomainList>({})
 
 async function getObjectsFromStorage() {
-  const data = await storage.getItem('trackedDomains')
-  storedDomains.value = data['trackedDomains'] || {}
-
   const token = await storage.getItem('ext-token')
   extToken.value = token['ext-token']
 
+  const data = await storage.getItem('trackedDomains')
   const bData = await storage.getItem('blockedDomains')
-  blockedDomains.value = bData['blockedDomains'] || {}
+
+  return {
+    ...(data['trackedDomains'] || {}),
+    ...(bData['blockedDomains'] || {}),
+  }
 }
 
 async function addToDomainsList() {
@@ -175,9 +180,14 @@ async function addToDomainsList() {
   try {
     const url = getHostname(addDomain.value)
     if (url) {
-      trackedDomains.value[url] = { url }
-      storedDomains.value[url] = { url }
-      await storage.setItem('trackedDomains', toRaw(storedDomains.value))
+      apiManager('', graphqlURL).createUserWhitelistDomain({
+        token: extToken.value,
+        data: [url],
+      })
+
+      // trackedDomains.value[url] = { url, isActive: true, isBlocked: false }
+      // storedDomains.value[url] = { url, isActive: true, isBlocked: false }
+      // await storage.setItem('trackedDomains', toRaw(storedDomains.value))
       addDomain.value = ''
     }
   } catch (e) {
@@ -186,12 +196,20 @@ async function addToDomainsList() {
   }
 }
 
-async function toggleDomainToStorage(event: Event) {
+async function toggleDomainToStorage(
+  event: Event,
+  { url, whitelistId }: { url: string; whitelistId?: number }
+) {
   const target = event.target as HTMLInputElement
-  if (target.checked && !storedDomains.value[target.value]) {
-    storedDomains.value[target.value] = { url: target.value }
-  } else if (!target.checked && storedDomains.value[target.value]) {
-    delete storedDomains.value[target.value]
+  if (target.checked && !storedDomains.value[url]) {
+    // storedDomains.value[url] = {
+    //   url,
+    //   isActive: true,
+    //   isBlocked: false,
+    //   whitelistId,
+    // }
+  } else if (!target.checked && storedDomains.value[url]) {
+    // delete storedDomains.value[url]
   }
   await storage.setItem('trackedDomains', toRaw(storedDomains.value))
 }
@@ -255,10 +273,6 @@ const getLoginText = computed(() => {
     : 'Tracking NOT active, please add token'
 })
 
-const getAllDomains = computed(() => {
-  return { ...trackedDomains.value, ...blockedDomains.value }
-})
-
 async function fetchUserDomains() {
   const res = await apiManager('', graphqlURL).fetchUserAndAdminDomains({
     token: extToken.value,
@@ -268,7 +282,12 @@ async function fetchUserDomains() {
     (prev: any, curr: any) => {
       return {
         ...prev,
-        [curr.domain]: { url: curr.domain, isActive: curr.status === 'active' },
+        [curr.domain]: {
+          url: getParsedURL(curr.domain),
+          isActive: curr.status === 'active',
+          isBlocked: false,
+          whitelistId: curr.whitelistId,
+        },
       }
     },
     {}
@@ -281,29 +300,27 @@ async function getTabsInCurrentWindow() {
   data.forEach((d: Tabs.Tab) => {
     const url = getParsedURL(d)
     if (url) {
-      obj[url] = { url }
+      obj[url] = { url, isActive: false, isBlocked: false }
     }
   })
   return obj
 }
 
 ;(async () => {
+  let domainsFromAllSource: DomainList
   let currentTabs = await getTabsInCurrentWindow()
-  trackedDomains.value = { ...currentTabs }
 
-  await getObjectsFromStorage()
-
-  trackedDomains.value = {
-    ...toRaw(storedDomains.value),
-    ...toRaw(trackedDomains.value),
-  }
+  const storedDomains = await getObjectsFromStorage()
 
   const userDomains = await fetchUserDomains()
 
-  trackedDomains.value = {
+  domainsFromAllSource = {
+    ...currentTabs,
     ...userDomains,
-    ...toRaw(trackedDomains.value),
+    ...storedDomains,
   }
+
+  trackedDomains.value = domainsFromAllSource
 })()
 </script>
 

@@ -54,4 +54,37 @@ export class ApiService {
     const res = await this.httpClient('/graphql', options)
     return res.json()
   }
+
+  async createUserWhitelistDomain(payload: {
+    token: string
+    data: [string]
+  }): Promise<any> {
+    const graphqlQuery = {
+      query: `
+        mutation createUserDomainWhitelist($domains: [String!]){
+          createUserDomainWhitelist (domains: $domains) {
+          items {
+              whitelistId
+              domain
+              status
+          }
+        }
+      }`,
+      variables: {
+        domains: payload.data,
+      },
+    }
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        userId: payload.token,
+      },
+      body: JSON.stringify(graphqlQuery),
+    }
+    const res = await this.httpClient('/graphql', options)
+    return res.json()
+  }
+
+  // async updateUserWhitelistDomain(payload: {token:string, data: {url:string,}})
 }
