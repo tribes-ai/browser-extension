@@ -4,6 +4,7 @@ export interface DomainList {
     isBlocked?: boolean
     isActive?: boolean
     whitelistId?: number
+    pattern?: string
   }
 }
 

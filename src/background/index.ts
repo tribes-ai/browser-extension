@@ -35,19 +35,27 @@ let token: string
       const res = await apiService('', graphqlAPIURL).fetchBlockedDomains({
         token,
       })
-      blockedDomains = res.data?.blockedDomains?.items?.reduce(
-        (prev: any, curr: any) => {
-          return {
-            ...prev,
-            [curr]: {
-              url: getParsedURL(curr),
-              isBlocked: true,
-              isActive: false,
-            },
-          }
-        },
-        {}
-      )
+      try {
+        blockedDomains = res.data?.blockedDomains?.items?.reduce(
+          (prev: any, curr: string) => {
+            const pattern = curr.includes('*')
+              ? '(^.+\\.)?(' + curr.split('.')[1] + '+\\.)+[\\w-]+$'
+              : curr
+            return {
+              ...prev,
+              [curr]: {
+                url: getParsedURL(curr),
+                isBlocked: true,
+                isActive: false,
+                pattern,
+              },
+            }
+          },
+          {}
+        )
+      } catch (e) {
+        console.error(e)
+      }
       await storage.setItem('blockedDomains', blockedDomains)
     }
   })
@@ -56,6 +64,8 @@ let token: string
 async function getTrackedDomains() {
   const data = await storage.getItem('trackedDomains')
   trackedDomains = data['trackedDomains'] || {}
+  const bData = await storage.getItem('blockedDomains')
+  blockedDomains = bData['blockedDomains'] || {}
 }
 
 browser.runtime.onInstalled.addListener((): void => {
@@ -123,7 +133,13 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
   try {
     const tab: Tabs.Tab = await browser.tabs.get(tabId)
     const url = getParsedURL(tab)
-    if (url && trackedDomains[url] && tab.highlighted && tab.active) {
+    if (
+      url &&
+      trackedDomains[url] &&
+      tab.highlighted &&
+      tab.active &&
+      !isDomainBlocked(url || '')
+    ) {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onActivated', tab)
       if (data) {
@@ -131,7 +147,7 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
       }
     }
   } catch (e) {
-    // logger.error(e)
+    logger.error(e)
   }
 })
 
@@ -140,7 +156,7 @@ browser.tabs.onUpdated.addListener(
     try {
       if (tab.status === 'complete' && tab.highlighted && tab.active) {
         const url = getParsedURL(tab)
-        if (url && trackedDomains[url]) {
+        if (url && trackedDomains[url] && !isDomainBlocked(url || '')) {
           tabIds.add(tab.id)
           const data = getTabData(url, 'Tab.onUpdated', tab)
           if (data) {
@@ -164,7 +180,7 @@ browser.runtime.onMessage.addListener(
         active: true,
       })
       const url = getParsedURL(tab[0])
-      if (url && trackedDomains[url]) {
+      if (url && trackedDomains[url] && !isDomainBlocked(url || '')) {
         const mTabData = getTabData(url, 'Tab.onClick', tab[0])
         if (mTabData) {
           trackedEvents[mTabData.eventId] = mTabData
@@ -261,7 +277,19 @@ function createSendEventsAlarm(): void {
 function createFetchDomainsAlarm(): void {
   browser.alarms.get('fetch-domains').then((a) => {
     if (!a) {
-      browser.alarms.create('fetch-domains', { periodInMinutes: 1.0 })
+      browser.alarms.create('fetch-domains', { periodInMinutes: 0.5 })
     }
   })
+}
+
+function isDomainBlocked(domain: string): boolean {
+  let matched = false
+  for (const [, value] of Object.entries(blockedDomains)) {
+    const regex = new RegExp(value.pattern || '')
+    matched = regex.test(domain)
+    if (matched) {
+      return matched
+    }
+  }
+  return matched
 }
