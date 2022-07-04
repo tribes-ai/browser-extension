@@ -101,7 +101,10 @@
               <input type="checkbox" disabled />
             </td>
           </tr>
-          <tr v-for="(domain, key) in trackedDomains" :key="domain.url">
+          <tr
+            v-for="(domain, key) in getDomainsFromAllSources"
+            :key="domain.url"
+          >
             <td>{{ key }}</td>
             <td>
               <input
@@ -143,7 +146,7 @@ import type { Tabs } from 'webextension-polyfill'
 
 import { DomainList } from '~/types'
 import LocalStorage from '~/utils/LocalStorage'
-import { getParsedURL } from '~/utils/Common'
+import { getParsedURL, isDomainBlocked } from '~/utils/Common'
 import Logger from '~/utils/Logger'
 import ApiManager from '~/api'
 
@@ -153,7 +156,6 @@ const apiManager = ApiManager()
 const addDomain = ref('')
 const invalidDomain = ref(false)
 const trackedDomains = ref<DomainList>({})
-const storedDomains = ref<DomainList>({})
 const extToken = ref('')
 const tempValue = ref('')
 const appVersion = ref(import.meta.env.VITE_APP_VERSION)
@@ -161,17 +163,16 @@ const inValidToken = ref(false)
 const tokenError = ref('')
 const storage = new LocalStorage()
 const logger = new Logger()
+let blockedDomains: DomainList
 
 async function getObjectsFromStorage() {
   const token = await storage.getItem('ext-token')
   extToken.value = token['ext-token']
 
   const data = await storage.getItem('trackedDomains')
-  const bData = await storage.getItem('blockedDomains')
 
   return {
     ...(data['trackedDomains'] || {}),
-    ...(bData['blockedDomains'] || {}),
   }
 }
 
@@ -180,14 +181,7 @@ async function addToDomainsList() {
   try {
     const url = getHostname(addDomain.value)
     if (url) {
-      apiManager('', graphqlURL).createUserWhitelistDomain({
-        token: extToken.value,
-        data: [url],
-      })
-
-      // trackedDomains.value[url] = { url, isActive: true, isBlocked: false }
-      // storedDomains.value[url] = { url, isActive: true, isBlocked: false }
-      // await storage.setItem('trackedDomains', toRaw(storedDomains.value))
+      await createOrUpdateUserDomain(url, 'active')
       addDomain.value = ''
     }
   } catch (e) {
@@ -196,22 +190,13 @@ async function addToDomainsList() {
   }
 }
 
-async function toggleDomainToStorage(
-  event: Event,
-  { url, whitelistId }: { url: string; whitelistId?: number }
-) {
+async function toggleDomainToStorage(event: Event, { url }: { url: string }) {
   const target = event.target as HTMLInputElement
-  if (target.checked && !storedDomains.value[url]) {
-    // storedDomains.value[url] = {
-    //   url,
-    //   isActive: true,
-    //   isBlocked: false,
-    //   whitelistId,
-    // }
-  } else if (!target.checked && storedDomains.value[url]) {
-    // delete storedDomains.value[url]
+  if (target.checked) {
+    await createOrUpdateUserDomain(url, 'active')
+  } else if (!target.checked) {
+    await createOrUpdateUserDomain(url, 'inactive')
   }
-  await storage.setItem('trackedDomains', toRaw(storedDomains.value))
 }
 
 function openPage() {
@@ -273,25 +258,38 @@ const getLoginText = computed(() => {
     : 'Tracking NOT active, please add token'
 })
 
-async function fetchUserDomains() {
-  const res = await apiManager('', graphqlURL).fetchUserAndAdminDomains({
-    token: extToken.value,
-  })
+const getDomainsFromAllSources = computed(() => {
+  return {
+    ...trackedDomains.value,
+    ...blockedDomains,
+  }
+})
 
-  return res?.data?.userWhitelistedDomains?.items.reduce(
-    (prev: any, curr: any) => {
-      return {
-        ...prev,
-        [curr.domain]: {
-          url: getParsedURL(curr.domain),
-          isActive: curr.status === 'active',
-          isBlocked: false,
-          whitelistId: curr.whitelistId,
-        },
-      }
-    },
-    {}
-  )
+async function fetchUserDomains() {
+  if (extToken.value) {
+    const res = await apiManager('', graphqlURL).fetchUserDomains({
+      token: extToken.value,
+    })
+
+    return res?.data?.userWhitelistedDomains?.items.reduce(
+      (prev: any, curr: any) => {
+        const isBlocked = isDomainBlocked(curr.domain)
+        return {
+          ...prev,
+          [curr.domain]: {
+            url: getParsedURL(curr.domain),
+            isActive: isBlocked
+              ? false
+              : curr.status === 'active'
+              ? true
+              : false,
+            isBlocked,
+          },
+        }
+      },
+      {}
+    )
+  }
 }
 
 async function getTabsInCurrentWindow() {
@@ -306,18 +304,59 @@ async function getTabsInCurrentWindow() {
   return obj
 }
 
+async function createOrUpdateUserDomain(
+  url: string,
+  status: string
+): Promise<any> {
+  try {
+    const res = await apiManager(
+      '',
+      graphqlURL
+    ).createUpdateUserWhitelistDomain({
+      token: extToken.value,
+      data: [
+        {
+          domain: url,
+          status: status,
+        },
+      ],
+    })
+    if (res.data?.createUpdateUserDomainWhitelist?.items) {
+      const userDomains = await fetchUserDomains()
+      if (userDomains) {
+        trackedDomains.value = {
+          ...trackedDomains.value,
+          ...userDomains,
+        }
+
+        await storage.removeItem('trackedDomains')
+        await storage.setItem('trackedDomains', toRaw(trackedDomains.value))
+        storage.getItem('trackedDomains').then((r) => {
+          console.log(r['trackedDomains'])
+        })
+      }
+      return true
+    }
+  } catch (e) {
+    return e
+  }
+}
+
 ;(async () => {
   let domainsFromAllSource: DomainList
   let currentTabs = await getTabsInCurrentWindow()
 
   const storedDomains = await getObjectsFromStorage()
 
+  const bData = await storage.getItem('blockedDomains')
+  blockedDomains = bData['blockedDomains'] || {}
+
   const userDomains = await fetchUserDomains()
 
   domainsFromAllSource = {
     ...currentTabs,
-    ...userDomains,
     ...storedDomains,
+    ...userDomains,
   }
 
   trackedDomains.value = domainsFromAllSource

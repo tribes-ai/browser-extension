@@ -31,32 +31,8 @@ let token: string
     if (alarm.name === 'send-events') {
       sendData(trackedEvents)
     }
-    if (alarm.name === 'fetch-domains') {
-      const res = await apiService('', graphqlAPIURL).fetchBlockedDomains({
-        token,
-      })
-      try {
-        blockedDomains = res.data?.blockedDomains?.items?.reduce(
-          (prev: any, curr: string) => {
-            const pattern = curr.includes('*')
-              ? '(^.+\\.)?(' + curr.split('.')[1] + '+\\.)+[\\w-]+$'
-              : curr
-            return {
-              ...prev,
-              [curr]: {
-                url: getParsedURL(curr),
-                isBlocked: true,
-                isActive: false,
-                pattern,
-              },
-            }
-          },
-          {}
-        )
-      } catch (e) {
-        console.error(e)
-      }
-      await storage.setItem('blockedDomains', blockedDomains)
+    if (alarm.name === 'fetch-domains' && token) {
+      getBlockedDomains()
     }
   })
 })()
@@ -81,6 +57,7 @@ browser.storage.onChanged.addListener((changes: any) => {
   if (changes?.['ext-token']) {
     token = changes?.['ext-token']?.newValue
     changeIcon(token)
+    getBlockedDomains()
   }
 })
 
@@ -135,10 +112,10 @@ browser.tabs.onActivated.addListener(async ({ tabId }: any) => {
     const url = getParsedURL(tab)
     if (
       url &&
-      trackedDomains[url] &&
       tab.highlighted &&
       tab.active &&
-      !isDomainBlocked(url || '')
+      trackedDomains[url]?.isActive &&
+      !trackedDomains[url]?.isBlocked
     ) {
       tabIds.add(tab.id)
       const data = getTabData(url, 'Tab.onActivated', tab)
@@ -156,7 +133,11 @@ browser.tabs.onUpdated.addListener(
     try {
       if (tab.status === 'complete' && tab.highlighted && tab.active) {
         const url = getParsedURL(tab)
-        if (url && trackedDomains[url] && !isDomainBlocked(url || '')) {
+        if (
+          url &&
+          trackedDomains[url]?.isActive &&
+          !trackedDomains[url]?.isBlocked
+        ) {
           tabIds.add(tab.id)
           const data = getTabData(url, 'Tab.onUpdated', tab)
           if (data) {
@@ -180,7 +161,11 @@ browser.runtime.onMessage.addListener(
         active: true,
       })
       const url = getParsedURL(tab[0])
-      if (url && trackedDomains[url] && !isDomainBlocked(url || '')) {
+      if (
+        url &&
+        trackedDomains[url]?.isActive &&
+        !trackedDomains[url]?.isBlocked
+      ) {
         const mTabData = getTabData(url, 'Tab.onClick', tab[0])
         if (mTabData) {
           trackedEvents[mTabData.eventId] = mTabData
@@ -277,19 +262,37 @@ function createSendEventsAlarm(): void {
 function createFetchDomainsAlarm(): void {
   browser.alarms.get('fetch-domains').then((a) => {
     if (!a) {
-      browser.alarms.create('fetch-domains', { periodInMinutes: 0.5 })
+      browser.alarms.create('fetch-domains', { periodInMinutes: 1220 })
     }
   })
 }
 
-function isDomainBlocked(domain: string): boolean {
-  let matched = false
-  for (const [, value] of Object.entries(blockedDomains)) {
-    const regex = new RegExp(value.pattern || '')
-    matched = regex.test(domain)
-    if (matched) {
-      return matched
+async function getBlockedDomains(): Promise<void> {
+  try {
+    if (token) {
+      const res = await apiService('', graphqlAPIURL).fetchBlockedDomains({
+        token,
+      })
+      blockedDomains = res.data?.blockedDomains?.items?.reduce(
+        (prev: any, curr: string) => {
+          const pattern = curr.includes('*')
+            ? '(^.+\\.)?(' + curr.split('.')[1] + '+\\.)+[\\w-]+$'
+            : curr
+          return {
+            ...prev,
+            [curr]: {
+              url: getParsedURL(curr),
+              isBlocked: true,
+              isActive: false,
+              pattern,
+            },
+          }
+        },
+        {}
+      )
+      await storage.setItem('blockedDomains', blockedDomains)
     }
+  } catch (e) {
+    console.error(e)
   }
-  return matched
 }

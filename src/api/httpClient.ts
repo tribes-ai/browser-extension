@@ -11,7 +11,7 @@ export class ApiService {
       method: 'POST',
       body: JSON.stringify(payload),
     }
-    return this.httpClient('/event', options)
+    return this.httpClient('/', options)
   }
 
   async fetchBlockedDomains(payload: { token: string }): Promise<any> {
@@ -30,7 +30,7 @@ export class ApiService {
     return res.json()
   }
 
-  async fetchUserAndAdminDomains(payload: { token: string }): Promise<any> {
+  async fetchUserDomains(payload: { token: string }): Promise<any> {
     const graphqlQuery = {
       query: `
       query {
@@ -55,23 +55,26 @@ export class ApiService {
     return res.json()
   }
 
-  async createUserWhitelistDomain(payload: {
+  async createUpdateUserWhitelistDomain(payload: {
     token: string
-    data: [string]
+    data: any
   }): Promise<any> {
     const graphqlQuery = {
       query: `
-        mutation createUserDomainWhitelist($domains: [String!]){
-          createUserDomainWhitelist (domains: $domains) {
+      mutation createUpdateUserDomainWhitelist(
+        $domainsWhitelists: [ExtensionDomainsWhitelistInput!]
+      ) {
+        createUpdateUserDomainWhitelist(domainsWhitelists: $domainsWhitelists) {
           items {
-              whitelistId
-              domain
-              status
+            whitelistId
+            domain
+            status
           }
         }
-      }`,
+      }
+      `,
       variables: {
-        domains: payload.data,
+        domainsWhitelists: payload.data,
       },
     }
     const options = {
@@ -85,6 +88,4 @@ export class ApiService {
     const res = await this.httpClient('/graphql', options)
     return res.json()
   }
-
-  // async updateUserWhitelistDomain(payload: {token:string, data: {url:string,}})
 }

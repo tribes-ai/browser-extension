@@ -35,6 +35,9 @@ export async function getManifest() {
       'https://events.dev.tribes.ai/',
       'https://events.sta.tribes.ai/',
       'https://events.tribes.ai/',
+      'https://api.dev.tribes.ai/',
+      'https://api.sta.tribes.ai/',
+      'https://api.tribes.ai/',
     ],
     content_scripts: [
       {

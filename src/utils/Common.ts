@@ -1,16 +1,19 @@
 import { getHostname } from 'tldts'
 import { Windows, Tabs } from 'webextension-polyfill'
 import { pick } from 'lodash-es'
-import { Tab, TabData, WindowData, Window } from '~/types'
+import { Tab, TabData, WindowData, Window, DomainList } from '~/types'
 import { PICK_FROM_TAB_OBJ, PICK_FROM_WINDOW_OBJ } from '~/utils/Constants'
 import LocalStorage from '~/utils/LocalStorage'
 const storage = new LocalStorage()
+let blockedDomains: DomainList
 let token: string
 
 //prettier-ignore
 (async () => {
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
+  const bData = await storage.getItem('blockedDomains')
+  blockedDomains = bData['blockedDomains'] || {}
 })()
 
 browser.storage.onChanged.addListener((changes: any) => {
@@ -154,4 +157,16 @@ export const serializeEvent = function (e: any): string {
     return JSON.stringify(o, null, 2)
   }
   return ''
+}
+
+export function isDomainBlocked(domain: string): boolean {
+  let matched = false
+  for (const [, value] of Object.entries(blockedDomains)) {
+    const regex = new RegExp(value.pattern || '')
+    matched = regex.test(domain)
+    if (matched) {
+      return matched
+    }
+  }
+  return matched
 }

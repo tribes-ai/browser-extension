@@ -3,7 +3,6 @@ export interface DomainList {
     url: string
     isBlocked?: boolean
     isActive?: boolean
-    whitelistId?: number
     pattern?: string
   }
 }
