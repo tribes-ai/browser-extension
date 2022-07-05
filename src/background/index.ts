@@ -202,14 +202,14 @@ try {
   /*
    * * commented/removed as part of https://tribes-ai.atlassian.net/browse/TRI-3393?focusedCommentId=40847
    */
-  // browser.windows.onRemoved.addListener(async (windowId: number) => {
-  //   try {
+  browser.windows.onRemoved.addListener(async (windowId: number) => {
+    try {
   //     const datetime = new Date().toISOString()
   //     const eventId = `${token}|${windowId}|${datetime}`
   //     const timezoneUtcOffset = -new Date().getTimezoneOffset()
   //     const timezoneId = Intl.DateTimeFormat().resolvedOptions().timeZone
   //     const data: WindowData = {
-  //       userId: token,
+  //       'userId': token,
   //       eventId,
   //       eventType: 'Window.onRemoved',
   //       timezoneUtcOffset,
@@ -219,13 +219,13 @@ try {
   //       version: process.env.VITE_APP_VERSION as string,
   //     }
   //     trackedEvents[data.eventId] = data
-  //     storage.setItem('events-data', JSON.stringify(trackedEvents))
-  //     trackedEvents = {}
+      storage.setItem('events-data', JSON.stringify(trackedEvents))
+      trackedEvents = {}
   //     await browser.alarms.clearAll()
-  //   } catch (e) {
-  //     logger.error(e)
-  //   }
-  // })
+    } catch (e) {
+      logger.error(e)
+    }
+  })
 } catch (e) {
   console.error(e)
 }
@@ -240,11 +240,16 @@ async function getTrackedDomains() {
 async function sendData(data: { [key: string]: TabData | WindowData }) {
   try {
     if (token && !isEmpty(data)) {
-      const eventsData = Object.values(data)
+      const tData = await storage.getItem('trackedEvents')
+      const sEvents = tData['trackedEvents'] || {}
+      const newData = { ...data, ...sEvents }
+      const eventsData = Object.values(newData)
       await apiService(token).saveEvents(eventsData)
       trackedEvents = {}
+      await storage.removeItem('trackedEvents')
     }
   } catch (e: unknown) {
+    await storage.setItem('trackedEvents', data)
     logger.error(e)
   }
 }

@@ -22,7 +22,7 @@ export class ApiService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        userId: payload.token,
+        'user-id': payload.token,
       },
       body: JSON.stringify(graphqlQuery),
     }
@@ -47,7 +47,7 @@ export class ApiService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        userId: payload.token,
+        'user-id': payload.token,
       },
       body: JSON.stringify(graphqlQuery),
     }
@@ -81,7 +81,7 @@ export class ApiService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        userId: payload.token,
+        'user-id': payload.token,
       },
       body: JSON.stringify(graphqlQuery),
     }
