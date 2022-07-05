@@ -271,7 +271,7 @@ async function fetchUserDomains() {
       token: extToken.value,
     })
 
-    return res?.data?.userWhitelistedDomains?.items.reduce(
+    const data = res?.data?.userWhitelistedDomains?.items.reduce(
       (prev: any, curr: any) => {
         const isBlocked = isDomainBlocked(curr.domain)
         return {
@@ -289,6 +289,9 @@ async function fetchUserDomains() {
       },
       {}
     )
+    await storage.removeItem('trackedDomains')
+    await storage.setItem('trackedDomains', data)
+    return data
   }
 }
 
@@ -328,12 +331,8 @@ async function createOrUpdateUserDomain(
           ...trackedDomains.value,
           ...userDomains,
         }
-
         await storage.removeItem('trackedDomains')
         await storage.setItem('trackedDomains', toRaw(trackedDomains.value))
-        storage.getItem('trackedDomains').then((r) => {
-          console.log(r['trackedDomains'])
-        })
       }
       return true
     }

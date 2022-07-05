@@ -20,7 +20,6 @@ let token: string
 
   //prettier-ignore
 ;(async () => {
-  browser.alarms.clearAll()
   createSendEventsAlarm()
   createFetchDomainsAlarm()
   getTrackedDomains()
