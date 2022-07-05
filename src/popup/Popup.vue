@@ -191,11 +191,15 @@ async function addToDomainsList() {
 }
 
 async function toggleDomainToStorage(event: Event, { url }: { url: string }) {
-  const target = event.target as HTMLInputElement
-  if (target.checked) {
-    await createOrUpdateUserDomain(url, 'active')
-  } else if (!target.checked) {
-    await createOrUpdateUserDomain(url, 'inactive')
+  try {
+    const target = event.target as HTMLInputElement
+    if (target.checked) {
+      await createOrUpdateUserDomain(url, 'active')
+    } else if (!target.checked) {
+      await createOrUpdateUserDomain(url, 'inactive')
+    }
+  } catch (e) {
+    logger.error(e)
   }
 }
 
@@ -266,32 +270,36 @@ const getDomainsFromAllSources = computed(() => {
 })
 
 async function fetchUserDomains() {
-  if (extToken.value) {
-    const res = await apiManager('', graphqlURL).fetchUserDomains({
-      token: extToken.value,
-    })
+  try {
+    if (extToken.value) {
+      const res = await apiManager('', graphqlURL).fetchUserDomains({
+        token: extToken.value,
+      })
 
-    const data = res?.data?.userWhitelistedDomains?.items.reduce(
-      (prev: any, curr: any) => {
-        const isBlocked = isDomainBlocked(curr.domain)
-        return {
-          ...prev,
-          [curr.domain]: {
-            url: getParsedURL(curr.domain),
-            isActive: isBlocked
-              ? false
-              : curr.status === 'active'
-              ? true
-              : false,
-            isBlocked,
-          },
-        }
-      },
-      {}
-    )
-    await storage.removeItem('trackedDomains')
-    await storage.setItem('trackedDomains', data)
-    return data
+      const data = res?.data?.userWhitelistedDomains?.items.reduce(
+        (prev: any, curr: any) => {
+          const isBlocked = isDomainBlocked(curr.domain)
+          return {
+            ...prev,
+            [curr.domain]: {
+              url: getParsedURL(curr.domain),
+              isActive: isBlocked
+                ? false
+                : curr.status === 'active'
+                ? true
+                : false,
+              isBlocked,
+            },
+          }
+        },
+        {}
+      )
+      await storage.removeItem('trackedDomains')
+      await storage.setItem('trackedDomains', data)
+      return data
+    }
+  } catch (e) {
+    logger.error(e)
   }
 }
 
