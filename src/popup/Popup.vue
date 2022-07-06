@@ -146,7 +146,7 @@ import type { Tabs } from 'webextension-polyfill'
 
 import { DomainList } from '~/types'
 import LocalStorage from '~/utils/LocalStorage'
-import { getParsedURL, isDomainBlocked } from '~/utils/Common'
+import { fetchUserDomains, getParsedURL } from '~/utils/Common'
 import Logger from '~/utils/Logger'
 import ApiManager from '~/api'
 
@@ -269,40 +269,6 @@ const getDomainsFromAllSources = computed(() => {
   }
 })
 
-async function fetchUserDomains() {
-  try {
-    if (extToken.value) {
-      const res = await apiManager('', graphqlURL).fetchUserDomains({
-        token: extToken.value,
-      })
-
-      const data = res?.data?.userWhitelistedDomains?.items.reduce(
-        (prev: any, curr: any) => {
-          const isBlocked = isDomainBlocked(curr.domain)
-          return {
-            ...prev,
-            [curr.domain]: {
-              url: getParsedURL(curr.domain),
-              isActive: isBlocked
-                ? false
-                : curr.status === 'active'
-                ? true
-                : false,
-              isBlocked,
-            },
-          }
-        },
-        {}
-      )
-      await storage.removeItem('trackedDomains')
-      await storage.setItem('trackedDomains', data)
-      return data
-    }
-  } catch (e) {
-    logger.error(e)
-  }
-}
-
 async function getTabsInCurrentWindow() {
   const obj: DomainList = {}
   const data = await browser.tabs.query({ currentWindow: true })
@@ -333,7 +299,7 @@ async function createOrUpdateUserDomain(
       ],
     })
     if (res.data?.createUpdateUserDomainWhitelist?.items) {
-      const userDomains = await fetchUserDomains()
+      const userDomains = await fetchUserDomains(graphqlURL)
       if (userDomains) {
         trackedDomains.value = {
           ...trackedDomains.value,
@@ -358,7 +324,7 @@ async function createOrUpdateUserDomain(
   const bData = await storage.getItem('blockedDomains')
   blockedDomains = bData['blockedDomains'] || {}
 
-  const userDomains = await fetchUserDomains()
+  const userDomains = await fetchUserDomains(graphqlURL)
 
   domainsFromAllSource = {
     ...currentTabs,

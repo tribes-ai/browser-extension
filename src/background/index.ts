@@ -1,6 +1,6 @@
 import browser, { Tabs, Alarms } from 'webextension-polyfill'
 import { DomainList, TabData, WindowData } from '~/types'
-import { getParsedURL, getTabData } from '~/utils/Common'
+import { fetchUserDomains, getParsedURL, getTabData } from '~/utils/Common'
 import LocalStorage from '~/utils/LocalStorage'
 import ApiManager from '~/api'
 import Logger from '~/utils/Logger'
@@ -13,7 +13,7 @@ const logger = new Logger()
 let trackedDomains: DomainList = {}
 const apiService = ApiManager()
 const tabIds = new Set()
-const graphqlAPIURL = process.env.VITE_APP_GRAPHQL_URL
+const graphqlAPIURL = process.env.VITE_APP_GRAPHQL_URL as string
 let trackedEvents: { [key: string]: TabData | WindowData } = {}
 let blockedDomains: DomainList
 let token: string
@@ -31,8 +31,11 @@ try {
       if (alarm.name === 'send-events') {
         sendData(trackedEvents)
       }
-      if (alarm.name === 'fetch-domains' && token) {
+      if (alarm.name === 'fetch-blocked-domains' && token) {
         getBlockedDomains()
+      }
+      if(alarm.name === 'fetch-user-domains' && token){
+        fetchUserDomains(graphqlAPIURL)
       }
     })
   })()  
@@ -46,6 +49,7 @@ try {
   browser.storage.onChanged.addListener((changes: any) => {
     if (changes?.trackedDomains) {
       trackedDomains = changes?.trackedDomains?.newValue
+     
     }
     if (changes?.['ext-token']) {
       token = changes?.['ext-token']?.newValue
@@ -268,9 +272,14 @@ function createSendEventsAlarm(): void {
 }
 
 function createFetchDomainsAlarm(): void {
-  browser.alarms.get('fetch-domains').then((a) => {
+  browser.alarms.get('fetch-blocked-domains').then((a) => {
     if (!a) {
-      browser.alarms.create('fetch-domains', { periodInMinutes: 1220 })
+      browser.alarms.create('fetch-blocked-domains', { periodInMinutes: 1220 })
+    }
+  })
+  browser.alarms.get('fetch-user-domains').then((a) => {
+    if (!a) {
+      browser.alarms.create('fetch-user-domains', { periodInMinutes: 60 })
     }
   })
 }

@@ -4,7 +4,11 @@ import { pick } from 'lodash-es'
 import { Tab, TabData, WindowData, Window, DomainList } from '~/types'
 import { PICK_FROM_TAB_OBJ, PICK_FROM_WINDOW_OBJ } from '~/utils/Constants'
 import LocalStorage from '~/utils/LocalStorage'
+import ApiManager from '~/api'
+import Logger from '~/utils/Logger'
 const storage = new LocalStorage()
+const apiManager = ApiManager()
+const logger = new Logger()
 let blockedDomains: DomainList
 let token: string
 
@@ -169,4 +173,41 @@ export function isDomainBlocked(domain: string): boolean {
     }
   }
   return matched
+}
+
+export async function fetchUserDomains(
+  graphqlURL: string
+): Promise<DomainList | undefined> {
+  try {
+    if (token) {
+      const res = await apiManager('', graphqlURL).fetchUserDomains({
+        token,
+      })
+
+      const data = res?.data?.userWhitelistedDomains?.items.reduce(
+        (prev: any, curr: any) => {
+          const isBlocked = isDomainBlocked(curr.domain)
+          return {
+            ...prev,
+            [curr.domain]: {
+              url: getParsedURL(curr.domain),
+              isActive: isBlocked
+                ? false
+                : curr.status === 'active'
+                ? true
+                : false,
+              isBlocked,
+            },
+          }
+        },
+        {}
+      )
+      await storage.removeItem('trackedDomains')
+      await storage.setItem('trackedDomains', data)
+      return data
+    }
+    return undefined
+  } catch (e) {
+    logger.error(e)
+  }
 }
