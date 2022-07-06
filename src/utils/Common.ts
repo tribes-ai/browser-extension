@@ -1,16 +1,23 @@
 import { getHostname } from 'tldts'
 import { Windows, Tabs } from 'webextension-polyfill'
 import { pick } from 'lodash-es'
-import { Tab, TabData, WindowData, Window } from '~/types'
+import { Tab, TabData, WindowData, Window, DomainList } from '~/types'
 import { PICK_FROM_TAB_OBJ, PICK_FROM_WINDOW_OBJ } from '~/utils/Constants'
 import LocalStorage from '~/utils/LocalStorage'
+import ApiManager from '~/api'
+import Logger from '~/utils/Logger'
 const storage = new LocalStorage()
+const apiManager = ApiManager()
+const logger = new Logger()
+let blockedDomains: DomainList
 let token: string
 
 //prettier-ignore
 (async () => {
   const data = await storage.getItem('ext-token')
   token = data['ext-token']
+  const bData = await storage.getItem('blockedDomains')
+  blockedDomains = bData['blockedDomains'] || {}
 })()
 
 browser.storage.onChanged.addListener((changes: any) => {
@@ -19,10 +26,14 @@ browser.storage.onChanged.addListener((changes: any) => {
   }
 })
 
-export function getParsedURL(tab: Tabs.Tab): string | null {
+export function getParsedURL(tab: Tabs.Tab | string): string | null {
   let hostname = null
-  if (tab?.url) {
+  if (typeof tab === 'string') {
+    hostname = getHostname(tab) || ''
+  } else if (tab?.url) {
     hostname = getHostname(tab.url) || ''
+  }
+  if (hostname) {
     hostname = hostname.startsWith('www.') ? hostname.substring(4) : hostname
     return hostname
   }
@@ -150,4 +161,53 @@ export const serializeEvent = function (e: any): string {
     return JSON.stringify(o, null, 2)
   }
   return ''
+}
+
+export function isDomainBlocked(domain: string): boolean {
+  let matched = false
+  for (const [, value] of Object.entries(blockedDomains)) {
+    const regex = new RegExp(value.pattern || '')
+    matched = regex.test(domain)
+    if (matched) {
+      return matched
+    }
+  }
+  return matched
+}
+
+export async function fetchUserDomains(
+  graphqlURL: string
+): Promise<DomainList | undefined> {
+  try {
+    if (token) {
+      const res = await apiManager('', graphqlURL).fetchUserDomains({
+        token,
+      })
+
+      const data = res?.data?.userWhitelistedDomains?.items.reduce(
+        (prev: any, curr: any) => {
+          const isBlocked = isDomainBlocked(curr.domain)
+          return {
+            ...prev,
+            [curr.domain]: {
+              url: getParsedURL(curr.domain),
+              isActive: isBlocked
+                ? false
+                : curr.status === 'active'
+                ? true
+                : false,
+              isBlocked,
+            },
+          }
+        },
+        {}
+      )
+      await storage.removeItem('trackedDomains')
+      await storage.setItem('trackedDomains', data)
+      return data
+    }
+    return undefined
+  } catch (e) {
+    logger.error(e)
+  }
 }
