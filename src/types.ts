@@ -1,5 +1,10 @@
 export interface DomainList {
-  [url: string]: string
+  [url: string]: {
+    url: string
+    isBlocked?: boolean
+    isActive?: boolean
+    pattern?: string
+  }
 }
 
 export interface TabData {
