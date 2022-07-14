@@ -1,6 +1,7 @@
 import { LogEntry } from '~/types'
 
-const baseURL = process.env.APP_API_URL as string
+const baseURL = (process.env.APP_API_URL ||
+  import.meta.env.VITE_APP_API_URL) as string
 
 export default class Logger {
   static async client(payload: LogEntry): Promise<Response> {
@@ -8,7 +9,6 @@ export default class Logger {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
       },
       body: JSON.stringify(payload),
     })

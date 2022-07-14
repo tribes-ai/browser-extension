@@ -44,6 +44,8 @@ try {
     browser.tabs.create({
       url: `${process.env.VITE_APP_BASE_URL}/login-browser-extension`,
     })
+    getBlockedDomains()
+    fetchUserDomains(graphqlAPIURL)
   })
 
   browser.storage.onChanged.addListener((changes: any) => {
@@ -55,6 +57,7 @@ try {
       token = changes?.['ext-token']?.newValue
       changeIcon(token)
       getBlockedDomains()
+      fetchUserDomains(graphqlAPIURL)
     }
   })
 
