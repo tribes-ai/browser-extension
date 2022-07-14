@@ -79,7 +79,8 @@
         <thead>
           <tr class="text-left">
             <th class="py-3">Domain</th>
-            <th class="py-3">Tracked</th>
+            <th class="py-3">Track</th>
+            <th class="py-3">Block</th>
           </tr>
         </thead>
         <tbody>
@@ -96,16 +97,32 @@
             <td class="pl-1">
               <input type="checkbox" class="accent-primary" checked />
             </td>
+            <td>
+              <input type="checkbox" disabled />
+            </td>
           </tr>
-          <tr v-for="(domain, key) in trackedDomains" :key="domain">
+          <tr
+            v-for="(domain, key) in getDomainsFromAllSources"
+            :key="domain.url"
+          >
             <td>{{ key }}</td>
             <td>
               <input
                 type="checkbox"
                 class="accent-primary"
                 :value="domain"
-                :checked="isDomainStored(domain)"
-                @change="toggleDomainToStorage"
+                :checked="domain.isActive"
+                :disabled="domain.isBlocked"
+                @change="toggleDomainToStorage($event, domain)"
+              />
+            </td>
+
+            <td>
+              <input
+                type="checkbox"
+                disabled
+                :value="domain"
+                :checked="domain.isBlocked"
               />
             </td>
           </tr>
@@ -125,17 +142,20 @@ import {
   LoginIcon,
   ExternalLinkIcon,
 } from '@heroicons/vue/outline'
+import type { Tabs } from 'webextension-polyfill'
+
 import { DomainList } from '~/types'
 import LocalStorage from '~/utils/LocalStorage'
-import { getParsedURL } from '~/utils/Common'
+import { fetchUserDomains, getParsedURL } from '~/utils/Common'
 import Logger from '~/utils/Logger'
+import ApiManager from '~/api'
 
-import type { Tabs } from 'webextension-polyfill'
+const graphqlURL = import.meta.env.VITE_APP_GRAPHQL_URL
+const apiManager = ApiManager()
 
 const addDomain = ref('')
 const invalidDomain = ref(false)
 const trackedDomains = ref<DomainList>({})
-const storedDomains = ref<DomainList>({})
 const extToken = ref('')
 const tempValue = ref('')
 const appVersion = ref(import.meta.env.VITE_APP_VERSION)
@@ -143,12 +163,17 @@ const inValidToken = ref(false)
 const tokenError = ref('')
 const storage = new LocalStorage()
 const logger = new Logger()
+let blockedDomains: DomainList
 
-async function getDomainsFromStorage() {
-  const data = await storage.getItem('trackedDomains')
-  storedDomains.value = data['trackedDomains'] || {}
+async function getObjectsFromStorage() {
   const token = await storage.getItem('ext-token')
   extToken.value = token['ext-token']
+
+  const data = await storage.getItem('trackedDomains')
+
+  return {
+    ...(data['trackedDomains'] || {}),
+  }
 }
 
 async function addToDomainsList() {
@@ -156,9 +181,7 @@ async function addToDomainsList() {
   try {
     const url = getHostname(addDomain.value)
     if (url) {
-      trackedDomains.value[url] = url
-      storedDomains.value[url] = url
-      await storage.setItem('trackedDomains', toRaw(storedDomains.value))
+      await createOrUpdateUserDomain(url, 'active')
       addDomain.value = ''
     }
   } catch (e) {
@@ -167,18 +190,17 @@ async function addToDomainsList() {
   }
 }
 
-async function toggleDomainToStorage(event: Event) {
-  const target = event.target as HTMLInputElement
-  if (target.checked && !storedDomains.value[target.value]) {
-    storedDomains.value[target.value] = target.value
-  } else if (!target.checked && storedDomains.value[target.value]) {
-    delete storedDomains.value[target.value]
+async function toggleDomainToStorage(event: Event, { url }: { url: string }) {
+  try {
+    const target = event.target as HTMLInputElement
+    if (target.checked) {
+      await createOrUpdateUserDomain(url, 'active')
+    } else if (!target.checked) {
+      await createOrUpdateUserDomain(url, 'inactive')
+    }
+  } catch (e) {
+    logger.error(e)
   }
-  await storage.setItem('trackedDomains', toRaw(storedDomains.value))
-}
-
-function isDomainStored(domain: string): boolean {
-  return Object.prototype.hasOwnProperty.call(storedDomains.value, domain)
 }
 
 function openPage() {
@@ -240,17 +262,77 @@ const getLoginText = computed(() => {
     : 'Tracking NOT active, please add token'
 })
 
-;(async () => {
-  getDomainsFromStorage()
-  const data = await browser.tabs.query({ currentWindow: true })
+const getDomainsFromAllSources = computed(() => {
+  return {
+    ...trackedDomains.value,
+    ...blockedDomains,
+  }
+})
+
+async function getTabsInCurrentWindow() {
   const obj: DomainList = {}
+  const data = await browser.tabs.query({ currentWindow: true })
   data.forEach((d: Tabs.Tab) => {
     const url = getParsedURL(d)
     if (url) {
-      obj[url] = url
+      obj[url] = { url, isActive: false, isBlocked: false }
     }
   })
-  trackedDomains.value = { ...toRaw(storedDomains.value), ...obj }
+  return obj
+}
+
+async function createOrUpdateUserDomain(
+  url: string,
+  status: string
+): Promise<any> {
+  try {
+    const res = await apiManager(
+      '',
+      graphqlURL
+    ).createUpdateUserWhitelistDomain({
+      token: extToken.value,
+      data: [
+        {
+          domain: url,
+          status: status,
+        },
+      ],
+    })
+    if (res.data?.createUpdateUserDomainWhitelist?.items) {
+      const userDomains = await fetchUserDomains(graphqlURL)
+      if (userDomains) {
+        trackedDomains.value = {
+          ...trackedDomains.value,
+          ...userDomains,
+        }
+        await storage.removeItem('trackedDomains')
+        await storage.setItem('trackedDomains', toRaw(trackedDomains.value))
+      }
+      return true
+    }
+  } catch (e) {
+    return e
+  }
+}
+
+;(async () => {
+  let domainsFromAllSource: DomainList
+  let currentTabs = await getTabsInCurrentWindow()
+
+  const storedDomains = await getObjectsFromStorage()
+
+  const bData = await storage.getItem('blockedDomains')
+  blockedDomains = bData['blockedDomains'] || {}
+
+  const userDomains = await fetchUserDomains(graphqlURL)
+
+  domainsFromAllSource = {
+    ...currentTabs,
+    ...storedDomains,
+    ...userDomains,
+  }
+
+  trackedDomains.value = domainsFromAllSource
 })()
 </script>
 

@@ -1,19 +1,91 @@
-const baseURL = process.env.APP_API_URL as string
+export class ApiService {
+  private httpClient: any
 
-export const postData = async (
-  payload: unknown,
-  token: string
-): Promise<Response> => {
-  const response = await fetch(baseURL + '/event', {
-    method: 'POST',
-    mode: 'cors',
-    cache: 'no-cache',
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      token: token,
-    },
-    body: JSON.stringify(payload),
-  })
-  return response.json()
+  constructor(config: any) {
+    this.httpClient = (endpoint = '/', options: any) =>
+      fetch(config.baseURL + endpoint, { options: config.options, ...options })
+  }
+
+  saveEvents(payload: unknown): Promise<Response> {
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+    return this.httpClient('/', options)
+  }
+
+  async fetchBlockedDomains(payload: { token: string }): Promise<any> {
+    const graphqlQuery = {
+      query: 'query { blockedDomains{ items } }',
+    }
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': payload.token,
+      },
+      body: JSON.stringify(graphqlQuery),
+    }
+    const res = await this.httpClient('/graphql', options)
+    return res.json()
+  }
+
+  async fetchUserDomains(payload: { token: string }): Promise<any> {
+    const graphqlQuery = {
+      query: `
+      query {
+        userWhitelistedDomains{
+          items{
+            whitelistId
+            domain
+            status
+          }
+        }
+      }`,
+    }
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': payload.token,
+      },
+      body: JSON.stringify(graphqlQuery),
+    }
+    const res = await this.httpClient('/graphql', options)
+    return res.json()
+  }
+
+  async createUpdateUserWhitelistDomain(payload: {
+    token: string
+    data: any
+  }): Promise<any> {
+    const graphqlQuery = {
+      query: `
+      mutation createUpdateUserDomainWhitelist(
+        $domainsWhitelists: [ExtensionDomainsWhitelistInput!]
+      ) {
+        createUpdateUserDomainWhitelist(domainsWhitelists: $domainsWhitelists) {
+          items {
+            whitelistId
+            domain
+            status
+          }
+        }
+      }
+      `,
+      variables: {
+        domainsWhitelists: payload.data,
+      },
+    }
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': payload.token,
+      },
+      body: JSON.stringify(graphqlQuery),
+    }
+    const res = await this.httpClient('/graphql', options)
+    return res.json()
+  }
 }
