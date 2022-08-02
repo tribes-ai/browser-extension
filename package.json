@@ -1,8 +1,8 @@
 {
   "name": "tribes.ai",
   "displayName": "Tribes.AI",
-  "version": "1.2.1",
-  "description": "Smart Time Tracking That Drives Revenue",
+  "version": "1.2.2",
+  "description": "Automated Timesheets for Professional Services",
   "private": true,
   "license": "MIT",
   "scripts": {
