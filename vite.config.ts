@@ -16,6 +16,7 @@ export const sharedConfig: UserConfig = {
   },
   define: {
     __DEV__: isDev,
+    'process.env': process.env,
   },
   plugins: [
     Vue(),

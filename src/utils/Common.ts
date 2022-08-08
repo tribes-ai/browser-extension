@@ -163,9 +163,12 @@ export const serializeEvent = function (e: any): string {
   return ''
 }
 
-export function isDomainBlocked(domain: string): boolean {
+export function isDomainBlocked(
+  domain: string,
+  dDomains: DomainList = blockedDomains
+): boolean {
   let matched = false
-  for (const [, value] of Object.entries(blockedDomains)) {
+  for (const [, value] of Object.entries(dDomains)) {
     const regex = new RegExp(value.pattern || '')
     matched = regex.test(domain)
     if (matched) {
