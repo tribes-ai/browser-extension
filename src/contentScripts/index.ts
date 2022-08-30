@@ -2,11 +2,12 @@ import LocalStorage from '~/utils/LocalStorage'
 const storage = new LocalStorage()
 const enableUserEvents = false
 
+const mode = process.env.NODE_ENV
+
 const tokenExtractionDomains = [
-  'localhost',
-  'app.dev.tribes.ai',
-  'app.sta.tribes.ai',
-  'app.tribes.ai',
+  ...(mode === 'development' ? ['localhost', 'app.dev.tribes.ai'] : []),
+  ...(mode === 'staging' ? ['app.sta.tribes.ai'] : []),
+  ...(mode === 'production' ? ['app.tribes.ai'] : []),
 ]
 
 // Firefox `browser.tabs.executeScript()` requires scripts return a primitive value

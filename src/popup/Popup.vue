@@ -146,7 +146,7 @@ import type { Tabs } from 'webextension-polyfill'
 
 import { DomainList } from '~/types'
 import LocalStorage from '~/utils/LocalStorage'
-import { fetchUserDomains, getParsedURL } from '~/utils/Common'
+import { fetchUserDomains, getParsedURL, isDomainBlocked } from '~/utils/Common'
 import Logger from '~/utils/Logger'
 import ApiManager from '~/api'
 
@@ -275,7 +275,8 @@ async function getTabsInCurrentWindow() {
   data.forEach((d: Tabs.Tab) => {
     const url = getParsedURL(d)
     if (url) {
-      obj[url] = { url, isActive: false, isBlocked: false }
+      const isBlocked = isDomainBlocked(url, blockedDomains)
+      obj[url] = { url, isActive: false, isBlocked: isBlocked }
     }
   })
   return obj
@@ -317,9 +318,10 @@ async function createOrUpdateUserDomain(
 
 ;(async () => {
   let domainsFromAllSource: DomainList
-  let currentTabs = await getTabsInCurrentWindow()
 
   const storedDomains = await getObjectsFromStorage()
+
+  let currentTabs = await getTabsInCurrentWindow()
 
   const bData = await storage.getItem('blockedDomains')
   blockedDomains = bData['blockedDomains'] || {}
