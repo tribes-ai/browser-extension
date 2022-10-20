@@ -251,7 +251,12 @@ async function sendData(data: { [key: string]: TabData | WindowData }) {
       const sEvents = tData['trackedEvents'] || {}
       const newData = { ...data, ...sEvents }
       const eventsData = Object.values(newData)
-      await apiService(token).saveEvents(eventsData)
+      const res: any = await apiService(token).saveEvents(eventsData)
+      if (res?.errors[0]?.message === 'Invalid access/browser token') {
+        token = ''
+        await storage.removeItem('ext-token')
+        return
+      }
       trackedEvents = {}
       await storage.removeItem('trackedEvents')
     }
@@ -293,6 +298,11 @@ async function getBlockedDomains(): Promise<void> {
       const res = await apiService('', graphqlAPIURL).fetchBlockedDomains({
         token,
       })
+      if (res?.errors[0]?.message === 'Invalid access/browser token') {
+        token = ''
+        await storage.removeItem('ext-token')
+        return
+      }
       blockedDomains = res.data?.blockedDomains?.items?.reduce(
         (prev: any, curr: string) => {
           const pattern = curr.includes('*')
