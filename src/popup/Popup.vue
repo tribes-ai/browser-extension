@@ -317,24 +317,32 @@ async function createOrUpdateUserDomain(
 }
 
 ;(async () => {
-  let domainsFromAllSource: DomainList
+  try {
+    let domainsFromAllSource: DomainList
 
-  const storedDomains = await getObjectsFromStorage()
+    const storedDomains = await getObjectsFromStorage()
 
-  let currentTabs = await getTabsInCurrentWindow()
+    let currentTabs = await getTabsInCurrentWindow()
 
-  const bData = await storage.getItem('blockedDomains')
-  blockedDomains = bData['blockedDomains'] || {}
+    const bData = await storage.getItem('blockedDomains')
+    blockedDomains = bData['blockedDomains'] || {}
 
-  const userDomains = await fetchUserDomains(graphqlURL)
+    const userDomains = await fetchUserDomains(graphqlURL)
 
-  domainsFromAllSource = {
-    ...currentTabs,
-    ...storedDomains,
-    ...userDomains,
+    domainsFromAllSource = {
+      ...currentTabs,
+      ...storedDomains,
+      ...userDomains,
+    }
+
+    trackedDomains.value = domainsFromAllSource
+  } catch (e: any) {
+    if (e.message === 'Invalid access/browser token') {
+      extToken.value = ''
+      inValidToken.value = true
+      tokenError.value = e.message
+    }
   }
-
-  trackedDomains.value = domainsFromAllSource
 })()
 </script>
 

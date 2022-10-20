@@ -186,6 +186,10 @@ export async function fetchUserDomains(
       const res = await apiManager('', graphqlURL).fetchUserDomains({
         token,
       })
+      if (res?.errors[0]?.message === 'Invalid access/browser token') {
+        token = ''
+        await storage.removeItem('ext-token')
+      }
 
       const data = res?.data?.userWhitelistedDomains?.items.reduce(
         (prev: any, curr: any) => {

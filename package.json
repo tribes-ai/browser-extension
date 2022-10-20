@@ -1,7 +1,7 @@
 {
   "name": "tribes.ai",
   "displayName": "Tribes.AI",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Automated Timesheets for Professional Services",
   "private": true,
   "license": "MIT",
@@ -41,7 +41,6 @@
     "@vue/eslint-config-prettier": "^7.0.0",
     "@vue/eslint-config-typescript": "^10.0.0",
     "@vueuse/core": "^7.5.1",
-    "axios": "^0.26.1",
     "chokidar": "^3.5.2",
     "cross-env": "^7.0.3",
     "crx": "^5.0.1",
