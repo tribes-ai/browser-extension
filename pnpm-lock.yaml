@@ -17,7 +17,6 @@ specifiers:
   '@vue/eslint-config-prettier': ^7.0.0
   '@vue/eslint-config-typescript': ^10.0.0
   '@vueuse/core': ^7.5.1
-  axios: ^0.26.1
   chokidar: ^3.5.2
   cross-env: ^7.0.3
   crx: ^5.0.1
@@ -64,7 +63,6 @@ devDependencies:
   '@vue/eslint-config-prettier': 7.0.0_jmelikmxvlxxw4lr5ckfceokoa
   '@vue/eslint-config-typescript': 10.0.0_v7qetogl6bjwwfl2nrlmjxakuu
   '@vueuse/core': 7.6.2_vue@3.2.31
-  axios: 0.26.1
   chokidar: 3.5.3
   cross-env: 7.0.3
   crx: 5.0.1
@@ -1153,14 +1151,6 @@ packages:
 
   /aws4/1.11.0:
     resolution: {integrity: sha512-xh1Rl34h6Fi1DC2WWKfxUTVqRsNnr6LsKz2+hfwDxQJWmrx8+c7ylaqBMcHfl1U1r2dsifOvKX3LQuLNZ+XSvA==}
-    dev: true
-
-  /axios/0.26.1:
-    resolution: {integrity: sha512-fPwcX4EvnSHuInCMItEhAGnaSEXRBjtzh9fOtsE6E1G6p7vl7edEeZe11QHf18+6+9gR5PbKV/sGKNaD8YaMeA==}
-    dependencies:
-      follow-redirects: 1.14.9
-    transitivePeerDependencies:
-      - debug
     dev: true
 
   /balanced-match/1.0.2:
@@ -2746,16 +2736,6 @@ packages:
   /fluent-syntax/0.13.0:
     resolution: {integrity: sha512-0Bk1AsliuYB550zr4JV9AYhsETsD3ELXUQzdXGJfIc1Ni/ukAfBdQInDhVMYJUaT2QxoamNslwkYF7MlOrPUwg==}
     engines: {node: '>=8.9.0'}
-    dev: true
-
-  /follow-redirects/1.14.9:
-    resolution: {integrity: sha512-MQDfihBQYMcyy5dhRDJUHcw7lb2Pv/TuE6xP1vyraLukNDHKbDxDNaOE3NbCAdKQApno+GPRyo1YAp89yCjK4w==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
     dev: true
 
   /forever-agent/0.6.1:
