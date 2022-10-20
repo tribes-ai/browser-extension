@@ -194,3 +194,5 @@ This command will take rollup.config.js, process `.ts` files inside `/src/backgr
 and write to `extensions/dist/background` & `extension/dist/contentScripts` respectively along with any assets available into `extension/dist/assets`
 
 Also `.env.production` file will be used to inject .env values as NODE_ENV is set to production.
+
+**IMPORTANT:** Always bump up the version is all the `.env` files and `package.json` before building and deploying extension to store.
